@@ -1,3 +1,57 @@
 NAME: Quentin Truong
 EMAIL: quentintruong@gmail.com
 ID: 404782322
+
+lab0.c : program which copies standard input to standard output
+Makefile : makefile which builds the executable, tar, cleans, and smoketests
+backtrace.png : screenshot of backtrace of lab0 with segfault
+breakpoint.png : screenshot of confirmed NULL pointer about to have data set
+
+smoketests:
+stdin_to_stdout: # this checks exit status of stdin->stdout
+    echo "expectedinput" | ./lab0 &>/dev/null; \
+    if [[ $$? -eq 0 ]]; then echo "Success stdin_to_stdout"; else echo "Fail stdin_to_stdout"; fi
+
+stdin_to_outfile: # this checks exit status of stdin->file
+    echo "expectedinput" | ./lab0 -o outfile; \
+    if [[ $$? -eq 0 ]]; then echo "Success stdin_to_outfile"; else echo "Fail stdin_to_outfile"; fi
+    rm -f outfile
+
+infile_to_stdout: # this checks exit status of file->stdout
+    echo "expectedinput" > infile; \
+    if [[ $$? -eq 0 ]]; then echo "Success infile_to_stdout"; else echo "Fail infile_to_stdout"; fi
+    rm -f infile
+
+infile_to_outfile: # this checks exit status of file->file
+    echo "expectedinput" > infile
+    chmod 777 infile
+    ./lab0 -i infile -o outfile; \
+    if [[ $$? -eq 0 ]]; then echo "Success infile_to_outfile"; else echo "Fail infile_to_outfile"; fi
+    rm -f infile outfile
+
+fail_infile: # this checks exit status of unreadable file->stdout
+    echo "expectedinput" > infile
+    chmod u-r infile
+    echo | ./lab0 -i infile &>/dev/null; \
+    if [[ $$? -eq 2 ]]; then echo "Success fail_infile"; else echo "Fail fail_infile"; fi
+    rm -f infile
+
+fail_outfile: # this checks exit status of unwritable file<-stdin
+    echo "expectedinput" > infile
+    touch outfile
+    chmod u-w outfile
+    ./lab0 -i infile -o outfile &>/dev/null; \
+    if [[ $$? -eq 3 ]]; then echo "Success fail_outfile"; else echo "Fail fail_outfile"; fi; \
+    rm -f infile outfile;
+
+unrecognized_argument: # this checks exit status for unrecognized arguments
+    ./lab0 --asdf &>/dev/null; \
+    if [[ $$? -eq 1 ]]; then echo "Success unrecognized_argument"; else echo "Fail unrecognized_argument"; fi
+
+segfault: # this checks exit status of segfault
+    ./lab0 --segfault &>/dev/null; \
+    if [[ $$? -ne 0 ]]; then echo "Success segfault"; else echo "Fail segfault"; fi
+
+catch_segfault: # this checks exit status of segfault with catch
+    ./lab0 --segfault --catch &>/dev/null; \
+    if [[ $$? -eq 4 ]]; then echo "Success catch_segfault"; else echo "Fail catch_segfault"; fi

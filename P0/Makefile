@@ -60,7 +60,7 @@ catch_segfault:
 	if [[ $$? -eq 4 ]]; then echo "Success catch_segfault"; else echo "Fail catch_segfault"; fi
 
 clean:
-	rm -f lab0
+	rm -f lab0 lab0-404782322.tar.gz
 
 dist: 
 	tar -czf lab0-404782322.tar.gz lab0.c Makefile README backtrace.png breakpoint.png
