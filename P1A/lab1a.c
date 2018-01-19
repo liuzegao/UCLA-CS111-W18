@@ -197,12 +197,11 @@ void exec_shell(void){
         close(pipe_to_child[0]);
         close(pipe_to_parent[1]);
 
-        char filename[] = "/bin/bash";
-        char *argv[2];
-        argv[0] = filename;
+        char* argv[2];
+        argv[0] = "/bin/bash";
         argv[1] = NULL;
 
-        if (execvp(filename, argv) == -1){
+        if (execvp(argv[0], argv) == -1){
             fprintf(stderr, "Error: execvp failed\n%s\n", strerror(errno));
             exit(1);
         }
