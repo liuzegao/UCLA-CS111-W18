@@ -136,10 +136,101 @@
 
 %========================================================
 \section{L3: Linking and Libraries: Object Modules, Linkage Editing, Libraries}
-\subsection{Overview}
+\subsection{Introduction}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+        & Process as fundamental; as executing instance of program
+        && Program as one or more files (these are not the executables though)
+        && Source must be translated
+    \end{easylist}
+
+\subsection{The Software Generation Tool Chain}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Source module
+        && Editable text in some language like C
+        & Relocatable object module
+        && Sets of compiled instructions; incomplete programs
+        & Library
+        && Collection of object modules
+        & Load module
+        && Complete programs ready to be loaded into memory
+        & Compiler
+        && Parse source modules; usually generates assembly, may generate pseudo-machine
+        & Assembler
+        && Object module with mostly machine code
+        && Memory addresses of functions, variables may not be filled in
+        & Linkage Editor
+        && Find all required object modules and resolve all references
+        & Program Loader
+        && Examines load module, creates virtual space, reads instructions, initializes data values
+        && Find and map additional shared libraries
+    \end{easylist}
+
+\subsection{Object Modules}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Code in multiple files
+        && Because more understandable if splitting functionality
+        && Many functions are reused, so use external libraries
+        & Relocatable object modules are program fragments
+        && Incomplete because make references to code in other modules
+        && Even the references to other code are only relative 
+        & ELF format
+        && Header section with types, sizes, and location of other sections
+        && Code and data section to be loaded contiguously
+        && Symbol table of external symbols
+        && Relocation entries describing location of field, width/type of field, symbol table entry
+    \end{easylist}
+
+\subsection{Libraries}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Reusable, standard functions in libraries 
+        && Libraries not always orthogonal and independent
+        & Build program by combining object modules and resolving external references 
+    \end{easylist}
+
+\subsection{Linkage Editing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Resolution
+        && Search libraries to find object modules to resolve external references
+        & Loading
+        && Lay text and data in single virtual address space
+        & Relocation
+        && Ensure references correctly reflect chosen address
+    \end{easylist}
+
+\subsection{Load Modules}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Load module requires no relocation and is complete
+        & When loading new module
+        && Determine required text and data sizes and locations, allocate segments, read contents, create a stack segment with pointer
+        & Load module has symbol table to help determine where exceptions occurred
+    \end{easylist}
+
+\subsection{Static vs. Shared Libraries}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Static Linking
+        && Many copies, so inefficient; also, permenant copy, so don't receive updates
+        & Shared Libraries
+        && Implementations vary, but one way
+        &&& Reserve address for libraries, linkage edit, map with redirection table, etc, more mapping
+        && Efficient, but doesn't work for static data because one copy
+        && But can be slow to load many libraries, and must know library name at loadtime
+    \end{easylist}
+
+\subsection{Dynamically Loaded Libraries}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & DLL loaded once needed
+        && Choose and load library, binds, use library, unload
+        && Resource efficient because can unload
+        & Implicitly Loaded Dynamically Loadable Libraries
+        && Another implementation of DLL with different pros/cons
     \end{easylist}
 %========================================================
 

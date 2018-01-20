@@ -40,8 +40,12 @@ void reset_terminal(void){
     tcsetattr(STDIN_FILENO, TCSANOW, &init_terminal_attr);
     int status = 0;
     waitpid(pid, &status, 0);
-    if (shell)
-        fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", status & 0x007f, WEXITSTATUS(status));//status & 0xff00);
+    if (shell){
+        if (WIFEXITED(status))
+            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", status & 0x007f, WEXITSTATUS(status));
+        else if (WIFSIGNALED(status))
+            fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", WTERMSIG(status), WEXITSTATUS(status));
+    }
 }
 
 // save terminal attributes and prepare exit handler
@@ -67,12 +71,16 @@ void set_terminal(void){
 }
 
 void sigint_handler(int signum){
-    fprintf(stderr, "Caught signal %d\n", signum);
+    signum++;
+    char out[] = "Caught signal\n";
+    write(2, out, sizeof(out) / sizeof(char));
     kill(pid, SIGINT);
 }
 
 void sigpipe_handler(int signum){
-    fprintf(stderr, "Caught signal %d\n", signum);
+    signum++;
+    char out[] = "Caught signal\n";
+    write(2, out, sizeof(out) / sizeof(char));
     exit(0);
 }
 
