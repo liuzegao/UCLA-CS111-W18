@@ -235,7 +235,74 @@
 %========================================================
 
 %========================================================
-\section{L3:}
+\section{L3: Linkage Conventions: Stack Frames and Linkage Conventions}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & What is the state of computation and how can it be saved?
+        & What is the mechanism of requesting and receiving services?
+    \end{easylist}
+
+\subsection{The Stack Model of Programming Languages}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Procedure-local variables
+        && Stored on a LIFO stack
+        && New call frames pushed onto stack when procedure called; old frames popped when procedure reutrns
+        && Long-lived resources on heap, not stack
+    \end{easylist}
+
+\subsection{Subroutine Linkage Conventions}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & X86 Subroutine Linkage
+        && Pass parameters to be called by routine
+        && Save return address and transfer control to entry
+        && Save content of non-volatile registers
+        && Allocate space for local variables
+        & X86 Return Process
+        && Return value to where routine expects it
+        && Pop local storage
+        && Restore registers
+        && Subroutine transfer control to return address
+        & Responsibilities split between caller and callee
+        & Saving and restoring state of procedure is a matter of stack frame and registers
+    \end{easylist}
+
+\subsection{Traps and Interrupts}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Procedure call vs Trap/Interrupt
+        && Procedure requested by running software and expects result; linkage conventions under software control
+        && After trap/interrupt, should restore state
+        & How
+        && Number associated with every interrupt/exception, maps to PS/PC
+        && Push new program counter and program status (from interrupt/trap vector table) onto CPU stack
+        && Resume execution at new PC
+        && First level handler
+        &&& Save general registers on stack
+        &&& Choose second level handler based on info from interrupt/trap
+        && Second level handler (procedure call)
+        &&& Deal with interrupt/exception
+        &&& Return to first level handler 
+        &&&& Restore saved registers and return-from-interrupt/trap
+        && CPU realoads PC/PS and resumes execution
+        & Stacking/unstacking interrupt/trap is 100x+ slower than procedure call
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L4: Arpaci-Dusseau Chapter 7: Scheduling: Introduction}
+\subsection{Overview}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L4:}
 \subsection{Overview}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
