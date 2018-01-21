@@ -266,7 +266,7 @@
         && Restore registers
         && Subroutine transfer control to return address
         & Responsibilities split between caller and callee
-        & Saving and restoring state of procedure is a matter of stack frame and registers
+        & Saving and restoring state of procedure is mostly a matter of stack frame and registers
     \end{easylist}
 
 \subsection{Traps and Interrupts}
@@ -294,10 +294,84 @@
 
 %========================================================
 \section{L4: Arpaci-Dusseau Chapter 7: Scheduling: Introduction}
-\subsection{Overview}
+\subsection{Workload Assumptions}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+        & Workload as the processes running in the system
+        & Fully-operational scheduling discipline
+        && Assume each job runs for same amount of time, arrives at same time, once started will run to completion, only uses CPU, run-time length is known
+    \end{easylist}
+
+\subsection{Scheduling Metrics}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Scheduling metric is something we can measure is useful for scheduling
+        && Turnaround time: Time_completion - Time_arrival
+        & Performance and Fairness often at odds with each other
+        && Fairness measured by Jain's Fairness Index
+    \end{easylist}
+
+\subsection{First In, First Out (FIFO)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Properties of FIFO
+        && Simple and easy to implement while working well based on assumptions
+        & Convoy Effect
+        && FIFO fails if few high-resource consumers are ahead of low-resource consumers
+    \end{easylist}
+
+\subsection{Shortest Job First (SJF)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & SJF is optimal given the assumptions
+        && But fails if relaxes arrival-time assumption
+    \end{easylist}
+
+\subsection{Shortest Time-to-Completion First (STCF)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Preemptive schedulers will context switch to run another process
+        && Non-preemptive schedulers run jobs to completion before considering another
+        && SJF is nonpreemptive
+        & Shortest time-to-completion (STCF) also known as Preemptive shortest job first (PSJF)
+        && Anytime a new job arrives, determine which job has shortest time remaining, and runs that one
+    \end{easylist}
+
+\subsection{A New Metric: Response Time}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & T_response: T_firstrun - T_arrival
+        & STCF is especially bad for optimizing response time
+    \end{easylist}
+
+\subsection{Round Robin}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & RR (time-slicing) runs job for a time slice (scheduling quantum) before switching to next
+        && Length of time slice is essential; if long, then long T_response; if short, context switching dominates
+        && Must choose a length of time which will amortize the cost well
+        && Also must consider cost of flushing CPU caches, TLBs, branch predictors, chip hardware
+        & Performs extremely poorly wrt turnaround time
+        && Most fair policies (evenly distribute) are like this
+    \end{easylist}
+
+\subsection{Incorporating I/O}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Overlap leads to higher utilization and better performance
+        && Use for IO, messages, etc
+        & Overlap CPU when one process requires IO
+        && While IO for process A, run process B on CPU (because A is blocked)
+    \end{easylist}
+
+\subsection{No More Oracle/Summary}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Assumption of known run-time length is highly invalid
+        & Shortest job remaining optimizes turnaround time
+        & Alternating between jobs optimizes response time
+        & Looking ahead
+        && Multi-level feedback: Using past events to predict future
     \end{easylist}
 %========================================================
 
