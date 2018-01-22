@@ -325,6 +325,7 @@
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & SJF is optimal given the assumptions
         && But fails if relaxes arrival-time assumption
+        && A long process may start, then a short process comes in
     \end{easylist}
 
 \subsection{Shortest Time-to-Completion First (STCF)}
@@ -381,7 +382,7 @@
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & MFLQ has a number of distinct queues with different priority levels
-        & If priority(A) > priority(B), A runs
+        & If priority(A) $<$ priority(B), A runs
         & If priority(A) == priority(B), A and B run in RR
         & Vary priority based on observed behavior
     \end{easylist}
@@ -432,7 +433,7 @@
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & Multiple levels of queues with feedback to determine priority
         & Rules
-        && If priority(A) > priority(B), A runs
+        && If priority(A) $>$ priority(B), A runs
         && If priority(A) = priority(B), A and B run in RR
         && When a job enters the system, has highest priority
         && When a job uses entire time allotment at a given level, its priority is reduced
@@ -441,7 +442,45 @@
 %========================================================
 
 %========================================================
-\section{L4:}
+\section{L4: Real Time Scheduling}
+\subsection{What are Real-Time Systems}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Priority scheduling is best effort
+        && Sometimes need more than just best effort (space shuttle reentry, data, assembly line, media players)
+        & Traditonal vs Real-time systems
+        && Turn-around time, fairness, response time for traditional
+        && Timeliness may be ms/day of accumulated tardiness
+        && Predictability is deviation in delivered timeliness
+        && Feasibility is whether possible to meet requirements
+        && Hard real-time is a requirement to run specifiy tasks at specified intervals 
+        && Soft real-time requires good response time, at the cost of degraded performance or recoverable failure
+        & Real-time systems 
+        && May know length of jobs/priorities, and starvation of certain jobs may be acceptable
+    \end{easylist}
+
+\subsection{Real-Time Scheduling Algorithms}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Static scheduling
+        && May be possible to define fixed schedule if know all tasks to run and expected completion time
+        & Dynamic Scheduling for changing workloads
+        && Questions of how to choose next task and how to deal with overload
+        & If high enough frequency of work, may just work for sufficiently-light loaded systems
+    \end{easylist}
+
+\subsection{Real-Time and Linux}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Linux was not designed as embedded or real-time system
+        && Supports a real-time scheduler sched\_setscheduler, but still does not have same level of response-times
+        & Windows believes in general throughput not deadlines, and is bad for critical real-time operations 
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L5:}
 \subsection{Overview}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
