@@ -306,7 +306,7 @@
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & Scheduling metric is something we can measure is useful for scheduling
-        && Turnaround time: Time_completion - Time_arrival
+        && $Turnaround_{time}: Time_{completion} - Time_{arrival}$
         & Performance and Fairness often at odds with each other
         && Fairness measured by Jain's Fairness Index
     \end{easylist}
@@ -340,7 +340,7 @@
 \subsection{A New Metric: Response Time}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & T_response: T_firstrun - T_arrival
+        & $T_{response}: T_{firstrun} - T_{arrival}$
         & STCF is especially bad for optimizing response time
     \end{easylist}
 
@@ -348,7 +348,7 @@
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & RR (time-slicing) runs job for a time slice (scheduling quantum) before switching to next
-        && Length of time slice is essential; if long, then long T_response; if short, context switching dominates
+        && Length of time slice is essential; if long, then long $T_{response}$; if short, context switching dominates
         && Must choose a length of time which will amortize the cost well
         && Also must consider cost of flushing CPU caches, TLBs, branch predictors, chip hardware
         & Performs extremely poorly wrt turnaround time
@@ -372,6 +372,71 @@
         & Alternating between jobs optimizes response time
         & Looking ahead
         && Multi-level feedback: Using past events to predict future
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L4: Arpaci-Dusseau Chapter 8: Scheduling: The Multi-Level Feedback Queue}
+\subsection{MLFQ: Basic Rules}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & MFLQ has a number of distinct queues with different priority levels
+        & If priority(A) > priority(B), A runs
+        & If priority(A) == priority(B), A and B run in RR
+        & Vary priority based on observed behavior
+    \end{easylist}
+
+\subsection{Attempt 1: How To Change Priority}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & When job enters, has highest priority
+        & If job uses entire time slice, priority is reduced
+        & If job gives up CPU early, priority remains the same
+        & Assume jobs are short so that it will either complete or move down in priority
+        & Starvation
+        && If there are too many interactive (IO) jobs, then longer processes with low priority will never run
+        & Gaming the scheduler
+        && Could write program to use less than entire timeslice, to always keep highest priority
+        & Changing Behavior
+        && Program may become interactive after computations, so needs higher priority
+    \end{easylist}
+
+\subsection{Attempt 2: The Priority Boost}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Boost all processes to top priority after a certain time length
+        & Difficult to know correct value for these voo-doo constant parameters (refer to Ousterhout’s Law)
+    \end{easylist}
+
+\subsection{Attempt 3: Better Accounting}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Account CPU time (Anti-gaming method)
+        && Once job uses up time allotment on given level, priority is reduced
+    \end{easylist}
+
+\subsection{Tuning MLFQ And Other Issues}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Difficult to find correct parameters
+        && High-priority queue contains interactive processes and run for short timeslices (20ms)
+        && Low-priority queue contains long-running processes and so run for longer timeslices (up to a few hundred ms)
+        && Many queues, like 60
+        && Priorities boosted every second or so
+        & Other schedulers use mathematical formulas to calculate priority (decay-usage)
+        & Even may offer advice to scheduler using Linux's nice program
+    \end{easylist}
+
+\subsection{MLFQ: Summary}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Multiple levels of queues with feedback to determine priority
+        & Rules
+        && If priority(A) > priority(B), A runs
+        && If priority(A) = priority(B), A and B run in RR
+        && When a job enters the system, has highest priority
+        && When a job uses entire time allotment at a given level, its priority is reduced
+        && After some time period S, move all the jobs in the system to the topmost queue
     \end{easylist}
 %========================================================
 
