@@ -72,6 +72,7 @@ void set_terminal(void){
 
 void sigint_handler(int signum){
     signum++;
+    fprintf(stderr, "fffff");
     char out[] = "Caught signal\n";
     write(2, out, sizeof(out) / sizeof(char));
     kill(pid, SIGINT);
@@ -79,12 +80,13 @@ void sigint_handler(int signum){
 
 void sigpipe_handler(int signum){
     signum++;
+    fprintf(stderr, "111111");
     char out[] = "Caught signal\n";
     write(2, out, sizeof(out) / sizeof(char));
     exit(0);
 }
 
-void read_write_child(int fd_read, int fd_write){ // childs version of read_write
+void read_write(int fd_read, int fd_write){
     char* buffer;
     buffer = malloc(READ_SIZE);
     int num_bytes = 0;
@@ -106,10 +108,6 @@ void read_write_child(int fd_read, int fd_write){ // childs version of read_writ
         }
     }
     free(buffer);
-}
-
-void read_write(int fd_read, int fd_write){
-    read_write_child(fd_read, fd_write);
 }
 
 void read_write_parent(int fd_read, int fd_write){ // parents version of read_write
@@ -172,7 +170,7 @@ void read_write_parent(int fd_read, int fd_write){ // parents version of read_wr
             }
 
             if (fds[1].revents & (POLLHUP | POLLERR)){
-                exit(1);
+                exit(0);
             }
         }
 
@@ -187,6 +185,7 @@ void create_pipe(int p[2]){
     }
 }
 
+// turn child process into bash shell with appropriate environment changes
 void exec_shell(void){
     signal(SIGINT, sigint_handler);
     signal(SIGPIPE, sigpipe_handler);
@@ -213,7 +212,6 @@ void exec_shell(void){
             fprintf(stderr, "Error: execvp failed\n%s\n", strerror(errno));
             exit(1);
         }
-        read_write_child(0, 1);
     }
     else{ // parent
         close(pipe_to_child[0]);
