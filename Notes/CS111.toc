@@ -45,5 +45,7 @@
 \contentsline {subsection}{\numberline {7.1}What are Real-Time Systems}{9}
 \contentsline {subsection}{\numberline {7.2}Real-Time Scheduling Algorithms}{9}
 \contentsline {subsection}{\numberline {7.3}Real-Time and Linux}{9}
-\contentsline {section}{\numberline {8}L5:}{10}
+\contentsline {section}{\numberline {8}L5: Arpaci-Dusseau Chapter 12: A Dialogue on Memory Virtualization}{10}
 \contentsline {subsection}{\numberline {8.1}Overview}{10}
+\contentsline {section}{\numberline {9}L5: Arpaci-Dusseau Chapter 13: The Abstraction: Address Spaces}{10}
+\contentsline {subsection}{\numberline {9.1}Overview}{10}
