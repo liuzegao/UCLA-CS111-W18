@@ -570,29 +570,105 @@
 
 %========================================================
 \section{L5: Arpaci-Dusseau Chapter 17: Free-Space Management}
-\subsection{Overview}
+\subsection{Assumptions}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+       & Free list manages the heap; contains references to all the free chunks in the region
+       & External fragmentation
+       && Have enough space, but not contiguous, so can't malloc
+       & Internal fragmentation 
+       && Gives memory larger than requested, which remains unused
     \end{easylist}
 
-\subsection{Overview}
+\subsection{Low-level Mechanisms}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+        & Splitting and Coalescing
+        && Split free chunk in two, returning first to the caller
+        && Coalesces adjacent free memory together, forming a single larger free chunk
+        & Header of allocated memory
+        && Contains size of region and magic number to speed up deallocation
+        & Embedding free list
+        && Build free list inside the free space itslf
+        && Nodes with size and next pointer
+        & Growing heap
+        && Just give up and return NULL
+        && Or call sbrk system call to OS to grow heap
     \end{easylist}
 
-\subsection{Overview}
+\subsection{Basic Strategies}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+        & Best fit
+        && Return smallest chunk that is equal or larger than the requested size
+        && Requires linear search
+        & Worst fit
+        && Find largest chunk, split it, return requested size
+        && Requires linear search
+        & First fit
+        && Returns first block big enough
+        && Faster because no exhaustive search
+        & Next fit
+        && Returns first block big enough starting from previous location
+        && Spreads searches through free space more uniformly 
     \end{easylist}
 
-\subsection{Overview}
+\subsection{Other Approaches}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+        & Segregated Lists
+        && Keep separated list to manage all objects of that size
+        && Hard to determine much memory to dedicate to that list
+        & Slab allocator by Jeff Bonwick
+        && Object caches for kernel objects 
+        && Each object cache are segregated free lists
+        && Requests slabs of memory from general allocator, when running low
+        & Binary buddy Allocation
+        && Big space of $2^N$
+        && Suffers from internal fragmentation but can recursively coalesce 
     \end{easylist}
+%========================================================
+
+%========================================================
+\section{L5: Garbage Collection and Defragmentation}
+\subsection{Garbage Collection}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Allocated resources are freed through explicit/implicit action by client
+        && close(2), free(3), delete operator, returning from a C/C++ subroutin, exit(2)
+        & If shared by multiple concurrent clients
+        && Free only if reference count is zero (don't free if others are still using it, just decrement the reference count)
+        & Garbage Collection
+        && Analyzes allocated resources to determine which are still in use
+        && Data structures assoc with resource references are designed to be easily enumerated to enable the scan for accessible resources
+        && Comes at a performance cost
+    \end{easylist}
+
+\subsection{Defragmentation}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Shards of free memory are not useful
+        && Coalescing is only useful if adjacent memory free at same time
+        & Defragmentation
+        && Changes which resources are still allocated
+        & Flash management
+        && NAND Flash is a pseudo-Write-Once-Read-Many medium
+        && Identify large (64MB) block with many 4KB blocks not in use
+        && Move all in use blocks and update resource allocation map
+        && Erase large block and add 4KB blocks to free list
+        & Disk Space Allocation
+        && Choose region to create contiguous free space
+        && For each file in that region, move it elsewhere
+        && Coalesce all that free memory
+        && Move set of files into that region
+        && Repeat until all files and free space is contiguous
+        & Internal fragmentation is like rust, it never sleeps
+        && Defragmentation used to be run periodically, now is run continuously
+        & Conclusions
+        && If using garbage collection, must make all resources discoverable, how to trigger scans, prevent race conditions with application
+        && Must not disrupt running applications when using defragmentation
+    \end{easylist}
+\clearpage
 %========================================================
 
 %========================================================
@@ -602,7 +678,6 @@
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         
     \end{easylist}
-
 \clearpage
 
 \end{document}  
