@@ -492,11 +492,117 @@
 
 %========================================================
 \section{L5: Arpaci-Dusseau Chapter 13: The Abstraction: Address Spaces}
+\subsection{Early Systems}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & OS as set of routines (a library)
+        & Program in physical memory used rest of space
+    \end{easylist}
+
+\subsection{Multiprogramming and Time Sharing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Multiprogramming
+        && Multiple processes ready to run at a given time with OS switching between them
+        && Increases utilization of CPU; increased efficiency of CPU is very relevant bc so expensive
+        & Timesharing and interactivity
+        && Long program-debug cycles bad for programmers
+        && Giving all programs full access to memory is not safe
+    \end{easylist}
+
+\subsection{The Address Space}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Address space is easy to use abstraction of physical memory
+        && Contains code, stack, heap
+        && Every program thinks it had very large address space, even though it doesn't
+    \end{easylist}
+
+\subsection{Goals}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Transparency
+        && Cannot tell that memory is virtual
+        & Efficiency
+        && OS should make virtualization efficient wrt time and space, relying on hardware for this
+        & Protection
+        && Isolate process memory from each other
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L5: Arpaci-Dusseau Chapter 14: Interlude: Memory API}
+\subsection{Types of Memory}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Stack
+        && Automatic memory is managed implicitly by compiler
+        & Heap
+        && Long lived memory where allocations and deallocations handled by programmer
+    \end{easylist}
+
+\subsection{The malloc()/free() Call}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & double *d = (double *) malloc(sizeof(double));
+        & free(d); // prevents memory leaks
+    \end{easylist}
+
+\subsection{Common Errors}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Modern languages have automatic memory-management or a garbage collector because people don't free
+        & Seg fault if you forget to allocate
+        & Buffer overflow if not enough allocated space
+        & Dangling pointer if you free memory before finished using it
+        & Double freeing memory is undefined
+        & Incorrect use of free (passing it things other than pointer from malloc) is dangerous
+        & Use Valground and Purify to find memory leaks
+    \end{easylist}
+
+\subsection{Underlying OS Support}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Break is the location at the end of the heap
+        && System call brk is used to increase/decrease size of heap
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L5: Arpaci-Dusseau Chapter 17: Free-Space Management}
 \subsection{Overview}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         
     \end{easylist}
+
+\subsection{Overview}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        
+    \end{easylist}
+
+\subsection{Overview}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        
+    \end{easylist}
+
+\subsection{Overview}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L5: Arpaci-Dusseau Chapter 14: }
+\subsection{Overview}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        
+    \end{easylist}
+
 \clearpage
 
 \end{document}  
