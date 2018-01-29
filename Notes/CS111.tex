@@ -672,11 +672,53 @@
 %========================================================
 
 %========================================================
-\section{L5: Arpaci-Dusseau Chapter 14: }
-\subsection{Overview}
+\section{L5: Arpaci-Dusseau Chapter 18: Paging: Introduction}
+\subsection{A Simple Example And Overview}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        
+        & Paging
+        && Divide process address space into fixed-sized units
+        && View memory as fixed-sized page frames
+        & Free list
+        && OS may hold list of free pages
+        & Page table is a per process data structure
+        && Stores address translations for virtual pages so we know where it is in physical memory
+        & Virtual address [VPN, OFFSET]
+        && Virtual page number (VPN) indexes page table to find physical frame/page number (PFN/PPN)
+        && Translate VPN to PPN then load from memory
+        && Offset determines which byte within page
+    \end{easylist}
+
+\subsection{Where Are Page Tables Stored?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Page table entry
+        && Holds physical translation 
+        && If roughly 4 bytes per PTE, page tables would be big
+        && Problem bc page table per process
+        & Stored somewhere in memory
+    \end{easylist}
+
+\subsection{What’s Actually In The Page Table?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Linear Page Table
+        && Index array by VPN to look up PTE and to find physical frame number (PFN)
+        && Valid bit indicates if memory is valid (traps if invalid)
+        && Proction bit indicates whether page can be read/written/executed (trap if bad access)
+        && Present bit indicates whether page is in memory or disk (if it has been swapped out)
+        && Dirty bit indicates if page has been modified since brought into memory
+        && Reference/aceess bit indicates if page has been accessed (to determine which pages are popular; used for page replacement) 
+    \end{easylist}
+
+\subsection{Paging: Also Too Slow}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Must translate virtual address
+        && VPN = (Virtual address & VPN_MASK) >> SHIFT
+        && PTEaddr = Page table base address + VPN * sizeof(PTE)
+        && Offset = Virtual address & OFFSET_MASK 
+        && PhysAddr = (PFN << SHIFT) | Offset
     \end{easylist}
 \clearpage
 
