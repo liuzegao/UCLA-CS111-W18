@@ -9,7 +9,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h> // poll
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,11 +24,20 @@ char LF[1] = {'\n'};
 int port_num;
 int fd_log;
 int log_flag = 0;
-int compress;
+static int compress = 0;
 
 // Globals
 int fd_socket;
 struct termios init_terminal_attr;
+
+void create_outfile(char* out_file){
+    fd_log = creat(out_file, 0666);
+    if (fd_log < 0) {
+        fprintf(stderr, "Cannot open output file '%s'\n", out_file);
+        fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
+    }
+}
 
 // get-opt long arg processing
 void process_args(int argc, char **argv){
@@ -41,8 +49,11 @@ void process_args(int argc, char **argv){
         {0, 0, 0, 0}
     };
     
-    while ((opt = getopt_long(argc, argv, "p:l:c", long_options, NULL)) != -1){
+    while ((opt = getopt_long(argc, argv, "p:l:", long_options, NULL)) != -1){
         switch (opt){
+            case 0:
+                /* Flag */
+                break;
             case 'p':
                 port_num = atoi(optarg);
                 break;
@@ -54,15 +65,6 @@ void process_args(int argc, char **argv){
                 fprintf(stderr, "Error: unrecognized argument\n");
                 exit(1);
         }
-    }
-}
-
-void create_outfile(char* out_file){
-    fd_log = creat(out_file, S_IRWXU);
-    if (fd_log < 0) {
-        fprintf(stderr, "Cannot open output file '%s'\n", out_file);
-        fprintf(stderr, "%s\n", strerror(errno));
-        exit(3);
     }
 }
 
@@ -112,7 +114,11 @@ void read_write_socket(int fd_read, int fd_write){
 
     int num_bytes;
     char* buffer;
+    char* buffer_line_send;
+    char* buffer_line_receive;
     buffer = malloc(READ_SIZE);
+    buffer_line_send = malloc(READ_SIZE);
+    buffer_line_receive = malloc(READ_SIZE);
 
     while (1){
         int nrevents = poll(fds, 2, 0);
@@ -124,55 +130,74 @@ void read_write_socket(int fd_read, int fd_write){
             fprintf(stderr, "Error: polling failed\n%s\n", strerror(errno));
             exit(1);
         }
-        else{
-            if (fds[0].revents & POLLIN){
-                num_bytes = read(fds[0].fd, buffer, READ_SIZE);
-                for (int i = 0; i < num_bytes; i++){
-                    switch (*(buffer+i)){
-                        case '\n':
-                        case '\r':
-                            write(fd_write, &CRLF, 2);
+        else if (fds[0].revents & POLLIN){
+            num_bytes = read(fds[0].fd, buffer, READ_SIZE);
+            if (log_flag){
+                sprintf(buffer_line_send, "SENT %d bytes: ", num_bytes);
+                write(fd_log, buffer_line_send, strlen(buffer_line_send));
+                write(fd_log, buffer, sizeof(char));
+                write(fd_log, "\n", sizeof(char));
+            }
+
+            for (int i = 0; i < num_bytes; i++){
+                switch (*(buffer+i)){
+                    case '\n':
+                    case '\r':
+                        write(fd_write, &CRLF, 2);
+                        if (compress){
+
+                        }
+                        else{
                             write(fd_socket, &LF, 1);
-                            break;
-                        default:
-                            write(fd_write, buffer + i, 1);
+                        }
+                        break;
+                    default:
+                        write(fd_write, buffer + i, 1);
+                        if (compress){
+                            
+                        }
+                        else{
                             write(fd_socket, buffer + i, 1);
-                            break;
-                    }
+                        }
+                        break;
                 }
-                if (log_flag){
-                    char buffer_to_file[num_bytes + 20];
-                    sprintf(buffer_to_file, "SENT %d bytes: %s\n", (int) strlen(buffer), buffer);
-                    write(fd_log, buffer_to_file, strlen(buffer_to_file));
-                }
-            }
-
-            if (fds[1].revents & POLLIN){
-                num_bytes = read(fds[1].fd, buffer, READ_SIZE);
-                for (int i = 0; i < num_bytes; i++){
-                    switch (*(buffer + i)){
-                        case '\n':
-                            write(fd_write, &CRLF, 2);
-                            break;
-                        default:
-                            write(fd_write, buffer + i, 1);
-                            break;
-                    }
-                }
-                /*if (log_flag){
-                    char buffer_to_file[num_bytes + 20];
-                    sprintf(buffer_to_file, "RECEIVED %d bytes: %s\n", (int) strlen(buffer), buffer);
-                    write(fd_log, buffer_to_file, strlen(buffer_to_file));
-                }*/
-            }
-
-            if (fds[1].revents & (POLLHUP | POLLERR)){
-                exit(0);
             }
         }
+        else if (fds[1].revents & POLLIN){
+            num_bytes = read(fds[1].fd, buffer, READ_SIZE);
+            if (num_bytes <= 0)
+                exit(0);
 
+            if (log_flag){
+                sprintf(buffer_line_receive, "RECEIVED %d bytes: ", num_bytes);
+                write(fd_log, buffer_line_receive, strlen(buffer_line_receive));
+                write(fd_log, buffer, sizeof(char) * num_bytes);
+                write(fd_log, "\n", sizeof(char));
+            }
+
+            for (int i = 0; i < num_bytes; i++){
+                switch (*(buffer + i)){
+                    case '\n':
+                    case '\r':
+                        write(fd_write, &CRLF, 2);
+                        break;
+                    default:
+                        write(fd_write, buffer + i, 1);
+                        break;
+                }
+            }
+        }
+        else if (fds[1].revents & (POLLHUP | POLLERR)){
+            close(fd_socket);
+            free(buffer);
+            free(buffer_line_send);
+            free(buffer_line_receive);
+            exit(0);
+        }
     }
     free(buffer);
+    free(buffer_line_send);
+    free(buffer_line_receive);
 }
 
 // connect to server at localhost port#

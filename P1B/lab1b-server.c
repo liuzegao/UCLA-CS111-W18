@@ -25,7 +25,7 @@ char LF[1] = {'\n'};
 
 // Process args
 int port_num;
-int compress;
+static int compress = 0;
 
 // Globals
 int pipe_to_shell[2];
@@ -43,8 +43,11 @@ void process_args(int argc, char **argv){
         {0, 0, 0, 0}
     };
     
-    while ((opt = getopt_long(argc, argv, "p:c", long_options, NULL)) != -1){
+    while ((opt = getopt_long(argc, argv, "p:", long_options, NULL)) != -1){
         switch (opt){
+            case 0:
+                /* Flag */
+                break;
             case 'p':
                 port_num = atoi(optarg);
                 break;
@@ -124,51 +127,54 @@ void redirect(int fd_client){
         if (nrevents == 0){
             continue;
         }
-        else if (nrevents < 0){
+        if (nrevents < 0){
             fprintf(stderr, "Error: polling failed\n%s\n", strerror(errno));
             exit(1);
         }
-        else{ 
-            if (fds[0].revents & POLLIN){ // send to shell
-                num_bytes = read(fds[0].fd, buffer, READ_SIZE);
-                for (int i = 0; i < num_bytes; i++){
-                    switch (*(buffer+i)){
-                        case 0x03:
-                            kill(pid, SIGINT);
-                            break;
-                        case 0x04:
-                            close(pipe_to_shell[1]);
-                            break;
-                        case '\n':
-                        case '\r':
-                            write(pipe_to_shell[1], &LF, 1);
-                            break;
-                        default:
-                            write(pipe_to_shell[1], buffer + i, 1);
-                            break;
-                    }
+        if (fds[0].revents & POLLIN){ // send to shell
+            num_bytes = read(fds[0].fd, buffer, READ_SIZE);
+            for (int i = 0; i < num_bytes; i++){
+                switch (*(buffer+i)){
+                    case 0x03:
+                        kill(pid, SIGINT);
+                        break;
+                    case 0x04:
+                        close(pipe_to_shell[1]);
+                        break;
+                    case '\n':
+                    case '\r':
+                        write(pipe_to_shell[1], &LF, 1);
+                        break;
+                    default:
+                        write(pipe_to_shell[1], buffer + i, 1);
+                        break;
                 }
-            }
-
-            if (fds[1].revents & POLLIN){ // send to client
-                num_bytes = read(fds[1].fd, buffer, READ_SIZE);
-                for (int i = 0; i < num_bytes; i++){
-                    switch (*(buffer + i)){
-                        case '\n':
-                            write(fd_client, &CRLF, 2);
-                            break;
-                        default:
-                            write(fd_client, buffer + i, 1);
-                            break;
-                    }
-                }
-            }
-
-            if (fds[1].revents & (POLLHUP | POLLERR)){
-                exit(0);
             }
         }
+        if (fds[1].revents & POLLIN){ // send to client
+            num_bytes = read(fds[1].fd, buffer, READ_SIZE);
+            for (int i = 0; i < num_bytes; i++){
+                switch (*(buffer + i)){
+                    default:
+                        write(fd_client, buffer + i, 1);
+                        break;
+                }
+            }
+        }
+        if (fds[1].revents & (POLLHUP | POLLERR)){
+            //write(fd_client, "\n", 1);
 
+            int status = 0;
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status))
+                fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", status & 0x007f, WEXITSTATUS(status));
+            else if (WIFSIGNALED(status))
+                fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", WTERMSIG(status), WEXITSTATUS(status));
+            close(fd_client);
+            close(fd_socket);
+            free(buffer);
+            exit(0);
+        }
     }
     free(buffer);
 }
