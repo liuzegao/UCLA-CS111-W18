@@ -14,17 +14,20 @@
 #include <string.h>
 #include <termios.h> // affect terminal
 #include <unistd.h> // close, dup, read
+#include "zlib.h"
+
 
 // Constants
+#define BUFF_SIZE 1024
 int READ_SIZE = 256;
-char CRLF[2] = {'\r', '\n'};
-char LF[1] = {'\n'}; 
+unsigned char CRLF[2] = {'\r', '\n'};
+unsigned char LF[1] = {'\n'}; 
 
 // Process args
 int port_num;
 int fd_log;
 int log_flag = 0;
-static int compress = 0;
+static int compress_flag = 0;
 
 // Globals
 int fd_socket;
@@ -45,7 +48,7 @@ void process_args(int argc, char **argv){
     static struct option long_options[] = {
         {"port", required_argument, 0, 'p'},
         {"log", required_argument, 0, 'l'},
-        {"compress", no_argument, &compress, 1}, // flag
+        {"compress", no_argument, &compress_flag, 1}, // flag
         {0, 0, 0, 0}
     };
     
@@ -103,6 +106,55 @@ void set_terminal(void){
     tcsetattr(STDIN_FILENO, TCSANOW, &ncine);
 }
 
+int def(unsigned char in[BUFF_SIZE], unsigned char out[BUFF_SIZE]){
+    int ret;
+    //unsigned have;
+    z_stream stdin_to_shell;
+
+    stdin_to_shell.zalloc = Z_NULL;
+    stdin_to_shell.zfree = Z_NULL;
+    stdin_to_shell.opaque = Z_NULL;
+
+    ret = deflateInit(&stdin_to_shell, Z_DEFAULT_COMPRESSION);
+    if (ret != Z_OK)
+        return ret;
+
+    stdin_to_shell.avail_in = 2;
+    stdin_to_shell.next_in = in;
+    stdin_to_shell.avail_out = BUFF_SIZE;
+    stdin_to_shell.next_out = out;
+    do {
+        deflate(&stdin_to_shell, Z_SYNC_FLUSH);
+    } while(stdin_to_shell.avail_in > 0);
+
+    deflateEnd(&stdin_to_shell);
+    return BUFF_SIZE - stdin_to_shell.avail_out;
+}
+
+int inf(unsigned char in[BUFF_SIZE], unsigned char out[BUFF_SIZE]) {
+    int ret;
+    z_stream shell_to_stdout;
+
+    shell_to_stdout.zalloc = Z_NULL;
+    shell_to_stdout.zfree = Z_NULL;
+    shell_to_stdout.opaque = Z_NULL;
+
+    ret = inflateInit(&shell_to_stdout);
+    if (ret != Z_OK)
+        return ret;
+
+    shell_to_stdout.avail_in = strlen((char*) in);
+    shell_to_stdout.next_in = in;
+    shell_to_stdout.avail_out = BUFF_SIZE;
+    shell_to_stdout.next_out = out;
+    do {
+        inflate(&shell_to_stdout, Z_SYNC_FLUSH);
+    } while(shell_to_stdout.avail_in > 0);
+
+    inflateEnd(&shell_to_stdout);
+    return shell_to_stdout.total_out;
+}
+
 // poll read from fd_socket; poll read from fd_read
 // write to fd_write from fd_read; write to fd_write from fd_socket
 void read_write_socket(int fd_read, int fd_write){ 
@@ -111,14 +163,6 @@ void read_write_socket(int fd_read, int fd_write){
     fds[1].fd = fd_socket;
     fds[0].events = POLLIN | POLLHUP | POLLERR;
     fds[1].events = POLLIN | POLLHUP | POLLERR;
-
-    int num_bytes;
-    char* buffer;
-    char* buffer_line_send;
-    char* buffer_line_receive;
-    buffer = malloc(READ_SIZE);
-    buffer_line_send = malloc(READ_SIZE);
-    buffer_line_receive = malloc(READ_SIZE);
 
     while (1){
         int nrevents = poll(fds, 2, 0);
@@ -131,40 +175,72 @@ void read_write_socket(int fd_read, int fd_write){
             exit(1);
         }
         else if (fds[0].revents & POLLIN){
-            num_bytes = read(fds[0].fd, buffer, READ_SIZE);
-            if (log_flag){
-                sprintf(buffer_line_send, "SENT %d bytes: ", num_bytes);
-                write(fd_log, buffer_line_send, strlen(buffer_line_send));
-                write(fd_log, buffer, sizeof(char));
-                write(fd_log, "\n", sizeof(char));
-            }
+            unsigned char buffer[READ_SIZE];
+            char buffer_line_send[READ_SIZE];
+            int num_bytes = read(fds[0].fd, buffer, READ_SIZE);
 
             for (int i = 0; i < num_bytes; i++){
                 switch (*(buffer+i)){
                     case '\n':
                     case '\r':
                         write(fd_write, &CRLF, 2);
-                        if (compress){
+                        if (compress_flag){
+                            unsigned long size = 1024;
+                            unsigned char out[READ_SIZE];
+                            compress(out, &size, LF, 1);
+                            write(fd_socket, out, size);
 
+                            if (log_flag){
+                                sprintf(buffer_line_send, "SENT %lu bytes: ", size);
+                                write(fd_log, buffer_line_send, strlen(buffer_line_send));
+                                write(fd_log, out, sizeof(char) * size);
+                                write(fd_log, "\n", sizeof(char));
+                            }
                         }
                         else{
                             write(fd_socket, &LF, 1);
+
+                            if (log_flag){
+                                sprintf(buffer_line_send, "SENT %d bytes: ", 1);
+                                write(fd_log, buffer_line_send, strlen(buffer_line_send));
+                                write(fd_log, LF, sizeof(char) * 1);
+                                write(fd_log, "\n", sizeof(char));
+                            }
                         }
                         break;
                     default:
                         write(fd_write, buffer + i, 1);
-                        if (compress){
-                            
+                        if (compress_flag){
+                            unsigned long size = 1024;
+                            unsigned char out[READ_SIZE];
+                            compress(out, &size, buffer + i, 1);
+                            write(fd_socket, out, size);
+
+                            if (log_flag){
+                                sprintf(buffer_line_send, "SENT %lu bytes: ", size);
+                                write(fd_log, buffer_line_send, strlen(buffer_line_send));
+                                write(fd_log, out, sizeof(char) * size);
+                                write(fd_log, "\n", sizeof(char));
+                            }
                         }
                         else{
                             write(fd_socket, buffer + i, 1);
+
+                            if (log_flag){
+                                sprintf(buffer_line_send, "SENT %d bytes: ", 1);
+                                write(fd_log, buffer_line_send, strlen(buffer_line_send));
+                                write(fd_log, buffer + i, sizeof(char) * 1);
+                                write(fd_log, "\n", sizeof(char));
+                            }
                         }
                         break;
                 }
             }
         }
         else if (fds[1].revents & POLLIN){
-            num_bytes = read(fds[1].fd, buffer, READ_SIZE);
+            unsigned char buffer[READ_SIZE];
+            char buffer_line_receive[READ_SIZE];
+            int num_bytes = read(fds[1].fd, buffer, READ_SIZE);
             if (num_bytes <= 0)
                 exit(0);
 
@@ -173,6 +249,15 @@ void read_write_socket(int fd_read, int fd_write){
                 write(fd_log, buffer_line_receive, strlen(buffer_line_receive));
                 write(fd_log, buffer, sizeof(char) * num_bytes);
                 write(fd_log, "\n", sizeof(char));
+            }
+
+            if (compress_flag){
+                unsigned long size = 1024;
+                unsigned char out[READ_SIZE];
+
+                uncompress(out, &size, buffer, num_bytes);
+                num_bytes = size;
+                strcpy((char*) buffer, (char*) out);
             }
 
             for (int i = 0; i < num_bytes; i++){
@@ -189,15 +274,9 @@ void read_write_socket(int fd_read, int fd_write){
         }
         else if (fds[1].revents & (POLLHUP | POLLERR)){
             close(fd_socket);
-            free(buffer);
-            free(buffer_line_send);
-            free(buffer_line_receive);
             exit(0);
         }
     }
-    free(buffer);
-    free(buffer_line_send);
-    free(buffer_line_receive);
 }
 
 // connect to server at localhost port#

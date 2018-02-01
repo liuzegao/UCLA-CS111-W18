@@ -16,16 +16,18 @@
 #include <sys/wait.h> // waitpid
 #include <termios.h> // affect terminal
 #include <unistd.h> // close, dup, read
+#include "zlib.h"
 
 
 // Constants
+#define BUFF_SIZE 1024
 int READ_SIZE = 256;
 char CRLF[2] = {'\r', '\n'};
 char LF[1] = {'\n'}; 
 
 // Process args
 int port_num;
-static int compress = 0;
+static int compress_flag = 0;
 
 // Globals
 int pipe_to_shell[2];
@@ -39,7 +41,7 @@ void process_args(int argc, char **argv){
     int opt;
     static struct option long_options[] = {
         {"port", required_argument, 0, 'p'},
-        {"compress", no_argument, &compress, 1}, // flag
+        {"compress", no_argument, &compress_flag, 1}, // flag
         {0, 0, 0, 0}
     };
     
@@ -109,6 +111,55 @@ void sigpipe_handler(int signum){
     exit(0);
 }
 
+int def(unsigned char in[BUFF_SIZE], unsigned char out[BUFF_SIZE]){
+    int ret;
+    //unsigned have;
+    z_stream stdin_to_shell;
+
+    stdin_to_shell.zalloc = Z_NULL;
+    stdin_to_shell.zfree = Z_NULL;
+    stdin_to_shell.opaque = Z_NULL;
+
+    ret = deflateInit(&stdin_to_shell, Z_DEFAULT_COMPRESSION);
+    if (ret != Z_OK)
+        return ret;
+
+    stdin_to_shell.avail_in = 2;
+    stdin_to_shell.next_in = in;
+    stdin_to_shell.avail_out = BUFF_SIZE;
+    stdin_to_shell.next_out = out;
+    do {
+        deflate(&stdin_to_shell, Z_SYNC_FLUSH);
+    } while(stdin_to_shell.avail_in > 0);
+
+    deflateEnd(&stdin_to_shell);
+    return BUFF_SIZE - stdin_to_shell.avail_out;
+}
+
+int inf(unsigned char in[BUFF_SIZE], unsigned char out[BUFF_SIZE]) {
+    int ret;
+    z_stream shell_to_stdout;
+
+    shell_to_stdout.zalloc = Z_NULL;
+    shell_to_stdout.zfree = Z_NULL;
+    shell_to_stdout.opaque = Z_NULL;
+
+    ret = inflateInit(&shell_to_stdout);
+    if (ret != Z_OK)
+        return ret;
+
+    shell_to_stdout.avail_in = strlen((char*) in);
+    shell_to_stdout.next_in = in;
+    shell_to_stdout.avail_out = BUFF_SIZE;
+    shell_to_stdout.next_out = out;
+    do {
+        inflate(&shell_to_stdout, Z_SYNC_FLUSH);
+    } while(shell_to_stdout.avail_in > 0);
+
+    inflateEnd(&shell_to_stdout);
+    return shell_to_stdout.total_out;
+}
+
 // write to shell from fd_client; wriet to fd_client from shell
 void redirect(int fd_client){
     struct pollfd fds[2];
@@ -116,10 +167,6 @@ void redirect(int fd_client){
     fds[1].fd = pipe_to_server[0]; // input to server from shell
     fds[0].events = POLLIN | POLLHUP | POLLERR;
     fds[1].events = POLLIN | POLLHUP | POLLERR;
-
-    int num_bytes;
-    char* buffer;
-    buffer = malloc(READ_SIZE);
 
     while (1){
         int nrevents = poll(fds, 2, 0);
@@ -132,7 +179,20 @@ void redirect(int fd_client){
             exit(1);
         }
         if (fds[0].revents & POLLIN){ // send to shell
-            num_bytes = read(fds[0].fd, buffer, READ_SIZE);
+            unsigned char buffer[READ_SIZE];
+            int num_bytes = read(fds[0].fd, buffer, READ_SIZE);
+            if (compress_flag){
+                unsigned long size = 1024;
+                unsigned char out[READ_SIZE];
+
+                uncompress(out, &size, buffer, num_bytes);
+                num_bytes = size;
+                strcpy((char*) buffer, (char*) out);
+
+                //fprintf(stderr, "196:%s:196\n", out);
+                //fprintf(stderr, "197:%d:197\n", num_bytes);
+            }
+
             for (int i = 0; i < num_bytes; i++){
                 switch (*(buffer+i)){
                     case 0x03:
@@ -152,31 +212,49 @@ void redirect(int fd_client){
             }
         }
         if (fds[1].revents & POLLIN){ // send to client
-            num_bytes = read(fds[1].fd, buffer, READ_SIZE);
+            unsigned char buffer[READ_SIZE];
+            int num_bytes = read(fds[1].fd, buffer, READ_SIZE);
+
+            if (compress_flag){
+                unsigned long size = 1024;
+                unsigned char out[READ_SIZE];
+                compress(out, &size, buffer, num_bytes);
+                write(fd_client, out, size);
+            }
+            else{
+                write(fd_client, buffer, num_bytes);
+            }
+
+            /*
             for (int i = 0; i < num_bytes; i++){
                 switch (*(buffer + i)){
                     default:
-                        write(fd_client, buffer + i, 1);
+                        if (compress_flag){
+                            unsigned long size = 1024;
+                            unsigned char out[READ_SIZE];
+                            compress(out, &size, buffer + i, 1);
+                            write(fd_client, out, size);
+                        }
+                        else{
+                            write(fd_client, buffer + i, 1);
+                        }
                         break;
                 }
-            }
+            }*/
         }
         if (fds[1].revents & (POLLHUP | POLLERR)){
-            //write(fd_client, "\n", 1);
-
             int status = 0;
             waitpid(pid, &status, 0);
             if (WIFEXITED(status))
                 fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", status & 0x007f, WEXITSTATUS(status));
             else if (WIFSIGNALED(status))
                 fprintf(stderr, "SHELL EXIT SIGNAL=%d STATUS=%d\n", WTERMSIG(status), WEXITSTATUS(status));
+
             close(fd_client);
             close(fd_socket);
-            free(buffer);
             exit(0);
         }
     }
-    free(buffer);
 }
 
 // turn child process into bash shell with appropriate environment changes
