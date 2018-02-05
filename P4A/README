@@ -1,0 +1,16 @@
+NAME: Quentin Truong
+EMAIL: quentintruong@gmail.com
+ID: 404782322
+
+Serial number of my Beaglebone: BBGW17080005
+MAC address of my Beaglebone: 2CF7F1066905
+WiFi: I used a hotspot from my iphone
+
+a selfie (my_beaglebone.jpg) of you holding your assembled Beaglebone (showing the chip).
+a screen shot (connected.png) from a USB terminal command session connected to your system, showing that you gave it a name and configured network access.
+a screen shot (copy.png) from a local session in which you copy a hello world program from your laptop/desktop to your Beaglebone.
+a screen shot (build_run.png) from a WIFI SSH session in which you build and run a trivial (hello world) program.
+a screen shot (git.png) from a WIFI SSH session in which you install git and clone a repository.
+a README file containing the serial number of your Beaglebone and the WiFi (unless you are using a hard-wired ethernet connnection) MAC address, and a description of the above files.
+
+tar -czf lab4a-404782322.tar.gz my_beaglebone.jpg connected.png copy.png build_run.png git.png README

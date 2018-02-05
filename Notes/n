@@ -1,0 +1,13 @@
+Introduction
+
+& OS 
+&& System software which supports higher level applications
+&& Abstracts hardware and hides details
+&& Provides services like memory management, security, etc
+& ISA
+&& 
+
+---
+
+& Service Delivery via Subroutines
+&& Fast but usually limited to same address space

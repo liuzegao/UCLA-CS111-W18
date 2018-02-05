@@ -672,7 +672,7 @@
 %========================================================
 
 %========================================================
-\section{L5: Arpaci-Dusseau Chapter 18: Paging: Introduction}
+\section{L6: Arpaci-Dusseau Chapter 18: Paging: Introduction}
 \subsection{A Simple Example And Overview}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
@@ -715,10 +715,226 @@
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & Must translate virtual address
-        && VPN = (Virtual address & VPN_MASK) >> SHIFT
+        && VPN = (Virtual address \& $VPN_{MASK}$) $>>$ SHIFT
         && PTEaddr = Page table base address + VPN * sizeof(PTE)
-        && Offset = Virtual address & OFFSET_MASK 
-        && PhysAddr = (PFN << SHIFT) | Offset
+        && Offset = Virtual address \& $OFFSET_{MASK}$
+        && PhysAddr = (PFN $<<$ SHIFT) | Offset
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L5: Arpaci-Dusseau Chapter 19: Paging: Faster Translations (TLBs)}
+\subsection{TLB Basic Algorithm}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & TLB
+        && Bc chopped address space into many fixed-sized units, paging requires a lot of memory to map addresses 
+        && This mapping memory is also stored in physical memory, which would require an additional memory lookup to read
+        && Instead, use a TLB, which is an address translation cache, to hold popular virtual-to-physical translations
+        & TLB Hit/miss
+        && If virtual page number (VPN) from virtual address (VA) is inside the TLB (translation lookaside buffer), then have TLB hit and may extract the page frame number (PFN)
+        && If VPN from VA is not inside TLB, then have TLB miss and must access page table (in memory) to find translation, update TLB, then restart lookup into TLB
+    \end{easylist}
+
+\subsection{Example: Accessing An Array}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Start with a miss, then multiple hits
+        && Rely on spatial locality for first pass
+        && Rely on temporal locality for second pass
+        & Caching is fundamental
+        && Temporal and spatial locality are necessary
+        && Can't make caches large because physics says large cache is slow    
+    \end{easylist}
+
+\subsection{Who Handles The TLB Miss?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Hardware
+        && Use page table base register to walk page table and find PTE
+        & Software
+        && Hardware raises exception, pauses instructions, privilege raises to kernel mode, jumps to trap handler
+        & Infinite TLB misses
+        && If is a problem, keep TLB miss handlers in physical memory (unmapped) so it will always be a hit
+        & RISC vs CISC (Aside)
+        && Complex has more and more powerful instructions
+        && Reduced has fewer and simpler primitives
+    \end{easylist}
+
+\subsection{TLB Contents: What’s In There?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Fully associative means a given translation can be anywhere in the TLB
+        & VPN  | PFN | other bits
+        && Other bits include valid bit, protection bits (regarding w/r/x), address space identifier, dirty bit, etc
+    \end{easylist}
+
+\subsection{TLB Issue: Context Switches}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Fully associative means a given translation can be anywhere in the TLB
+        & VPN  | PFN | other bits
+        && Other bits include valid bit, protection bits (regarding w/r/x), address space identifier, dirty bit, etc
+        && Could flush TLB on context switch, or could use address space identifier
+    \end{easylist}
+
+\subsection{Issue: Replacement Policy}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & LRU Replacement Policy
+        && Least recently used, but usually can't actually do this, so vaguely do LRU
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L6: Arpaci-Dusseau Chapter 21: Beyond Physical Memory: Mechanisms}
+\subsection{Swap Space}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Swap Space
+        && Use hard disk drive as storage
+        && Reserved space on disk for moving pages back and forth
+    \end{easylist}
+
+\subsection{The Present Bit}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Extract VPN from VA, check for TLB hit and produce PA if possible
+        && Otherwise, receive TLB miss and go to memory through page table base register to find PTE
+        & Present bit
+        && Set to one if page is in physical memory
+        && Otherwise, is not in physical memory and is a page fault
+        && OS invoked to service page fault, so page-fault handler runs
+    \end{easylist}
+
+\subsection{The Page Fault}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & OS page-fault handler
+        && Hardware does not do it because hardware does not know enough about swap space, I/O, etc
+        && OS looks in PTE to find address and request it from disk
+        && Process is blocked during this, so run another process
+    \end{easylist}
+
+\subsection{What If Memory Is Full?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Page-replacement Policy
+        && Page in from swap space; Page out from memory
+        && Replace if memory is full
+        && 10k-100k times slower if poor page-replacement policy
+    \end{easylist}
+
+\subsection{Page Fault Control Flow}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & If TLB miss
+        && If invalid, OS trap handle terminates process
+        && If not present, run page fault handler
+        &&& Find physical frame for soon-to-be-faulted-in page
+        &&& Run replacement alg if necessary
+        &&& I/O request page from swap space
+        &&& Retry for TLB miss, then retry for TLB hit
+        && If present and valid, grab PFN from PTE and retry
+    \end{easylist}
+
+\subsection{When Replacements Really Occur}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Swap daemon
+        && If fewer pages than the low watermark, then background thread evicts pages 
+        && Continues evicting pages until the high watermark
+        && Then goes back to sleep and waits
+        & Clustering
+        && Clustering/grouping these pages to swap partition increases efficiency because it reduces disk seek and rotational overheads
+        & Background work
+        && Do work in background (buffered disk writes, etc) because it is more efficient and makes better use of idle time 
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L6: Arpaci-Dusseau Chapter 22: Beyond Physical Memory: Policies}
+\subsection{Cache Management}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Minimize cache misses because a single miss will make it very slow
+        && Average memory access time (AMAT) $= T_M + (P_{miss} * T_D)$
+    \end{easylist}
+
+\subsection{The Optimal Replacement Policy}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Farthest in the future
+        && Is optimal
+        && Use this as a reference point, something to compare our algorithms against
+        & Types of misses
+        && Cold-start miss is compulsory because cache is empty
+        && Capacity miss is because cache ran out of space
+        && Conflict miss is because of hardware limits on where items can be placed in a hardware cache (not a problem for OS page cache)
+    \end{easylist}
+
+\subsection{Replacement Policies}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & FIFO
+        && Performs quite terribly, but is simple to implement
+        && Belady's Anomaly: FIFO performs even worse on larger cache than on smaller cache
+        & Random
+        && Can work
+        & Least-Frequently-Used (LFU)/Least-Recently-Used (LRU)
+        && Rely on locality and do what their names say
+        & Most-Frequently-Used (MFU)/Most-Recently-Used (MRU)
+        && Exist and do not work well
+        & Workload examples
+        && FIFO doesn't do well, random can do well, LRU does fairly well
+    \end{easylist}
+
+\subsection{Implementing LRU}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & True LRU is expensive
+        && Finding truly least-recently-used page is prohibitively time-consuming
+        & Approximate LRU using Clock algorithm
+        && Whenever page is referenced, use bit is set
+        && Clock hand points to some page, if bit is set, unsets it and checks next
+        && If bit is unset, replaces it
+    \end{easylist}
+
+\subsection{Considering Dirty Pages}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & If page is dirty (set dirty bit), then must be written back to disk if we want to evict it
+        && Prefer to evict clean pages
+    \end{easylist}
+
+\subsection{Other VM Policies}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Demand Paging
+        && Bring page into memory only 'on demand'
+        && Opposite of prefetching memory
+        & Clustering/Grouping of writes
+        && Write many things at same time because of how disk drive works
+    \end{easylist}
+
+\subsection{Thrashing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & If memory is just oversubscribed
+        && Then will constantly page and thrash
+        & Admission control
+        && Decide to not run some processes, so that we may do well on the remaining processes
+        & Out-of-memory killer
+        && Will choose a memory-intensive process and kill it
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L6: Arpaci-Dusseau Chapter 2}
+\subsection{A}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & 
     \end{easylist}
 \clearpage
 
