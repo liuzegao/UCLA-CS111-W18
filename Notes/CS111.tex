@@ -1086,7 +1086,7 @@
 %========================================================
 
 %========================================================
-\section{L7: Arpaci-Dusseau Chapter 25: A Dialogue on Concurrency}
+\section{L7: Inter-Process Communication}
 \subsection{Introduction}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
@@ -1194,11 +1194,138 @@
 %========================================================
 
 %========================================================
-\section{L8: Arpaci-Dussseau Chapter 28: A Dialogue on Concurrency}
-\subsection{A}
+\section{L8: Arpaci-Dussseau Chapter 28: Locks}
+\subsection{Locks: The Basic Idea}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & 
+        & Use of lock
+        && Put around critical sections so that it is performed atomically
+        & Lock variable
+        && If no other thread holds lock, thread acquires lock and enters critical section
+        && If another thread holds lock, then will not return
+    \end{easylist}
+
+\subsection{Pthread Locks}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Mutex is the POSIX library lock
+        && Provides mutual exclusion (exclude other threads from entering until first thread has completed)
+        & Use multiple locks (as opposed to one big lock for any critical section)
+        && Fine-grained vs coarse-grained approach
+    \end{easylist}
+
+\subsection{Evaluating Locks}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Mutual exclusion, fairness, performance
+        && Needs to prevent multiple threads from entering critical section
+        && Needs to not let contending threads starve
+        && Need time overheads to not be high
+    \end{easylist}
+
+\subsection{Controlling Interrupts}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Disable interrupts during critical section to provide mutual exclusion
+        && For single-processor system, makes code atomic
+        & Cons
+        && Requires user to call privileged operation
+        && Greedy user could lock for entire process
+        && Buggy user could break computer
+        && Does not work for multiprocessors because multiple threads can still enter critical section
+        && Interrupts may be lost
+        & OS is allowed to use this as mutual-exclusion primitive for updating data structures
+    \end{easylist}
+
+\subsection{A Failed Attempt: Just Using Loads/Stores}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Flag
+        && Doesn't work because the checking/setting of flag is not atomic
+        && Also spin-waiting (persistently checking value of flag) is incredibly inefficient
+    \end{easylist}
+
+\subsection{Building Working Spin Locks with Test-And-Set}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Test-and-set instruction (atomic exchange)
+        && Puts new value into old value; returns old value (atomically)
+        && Is sufficient to build a spinlock
+        & Spinlock
+        && To work on a single processor, requires preemptive scheduler (otherwise, thread would never relinquish CPU)
+        && Is a correct lock
+        && No fairness guarantees
+        && Terrible performance if single processor
+        && If N threads contending, N-1 time slices may be wasted while spinning on single processor
+        && Okay performance if multiple processors
+    \end{easylist}
+
+\subsection{Compare-And-Swap}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Compare-and-swap (compare-and-exchange)
+        && Test if value of ptr is equal to value at expected, if so, update with new value, otherwise, do nothing
+        && Can build spinlock with this
+    \end{easylist}
+
+\subsection{Load-Linked and Store-Conditional}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Load-linked
+        && Fetch value from memory and put in register
+        & Store-conditional
+        && If success, updates and returns 1; otherwise, no update and returns 0
+        && Only one thread is able to acquire lock if using these (because store-conditional will fail)
+    \end{easylist}
+
+\subsection{Fetch-And-Add}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Fetch-and-add
+        && Increment value and return old value
+        & Ticket lock
+        && If thread wants lock, do fetch-and-add and wait
+        && Global lock->turn determines who's turn 
+        && All threads make progress
+    \end{easylist}
+
+\subsection{A Simple Approach: Just Yield, Baby}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Yield
+        && System call yield to allow processes to deschedule self
+        && Better than spinlock, but still costly
+        && Does not address starvation issue
+    \end{easylist}
+
+\subsection{Using Queues: Sleeping Instead Of Spinning}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Sleep and wake
+        && Test-and-set with explicit queue of lock waiters
+        && Avoids starvation
+        && May sleep forever in wakeup/waiting race if release of lock occurs after park()
+        && So have setpark() to indicate a thread is about to park; if interrupted and another thread unparks, thread will return rather than sleep
+        & Solaris uses park/unpark
+        & Linux uses futex
+    \end{easylist}
+
+\subsection{Two-Phase Locks}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Spins during first cycle, then on second cycle will sleep
+        & Hybrid approach is effective
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L6: Arpaci-Dusseau Chapter 30.1: Condition Variables}
+\subsection{Definition and Routines}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Condition variable
+        && Explicit queue for threads if condition is not met
+        && When condition is correct, wakes
     \end{easylist}
 %========================================================
 
@@ -1209,7 +1336,6 @@
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
     \end{easylist}
-%========================================================
 
 \clearpage
 
