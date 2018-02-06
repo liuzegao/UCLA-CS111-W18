@@ -723,7 +723,7 @@
 %========================================================
 
 %========================================================
-\section{L5: Arpaci-Dusseau Chapter 19: Paging: Faster Translations (TLBs)}
+\section{L6: Arpaci-Dusseau Chapter 19: Paging: Faster Translations (TLBs)}
 \subsection{TLB Basic Algorithm}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
@@ -930,12 +930,287 @@
 %========================================================
 
 %========================================================
-\section{L6: Arpaci-Dusseau Chapter 2}
+\section{L6: Working Sets}
+\subsection{LRU is not enough}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Global LRU
+        && Most-recently used page is from current process and will not run for a while
+        && Least-recently used page is from old process about to run
+    \end{easylist}
+
+\subsection{The concept of a Working Set}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Is the set of pages for a given process
+        && Increasing the number of pages makes little difference in performance, but decreasing makes a difference
+        & Different computations require different sizes, getting the number correct will minimize page faults and maximize throughput
+    \end{easylist}
+
+\subsection{Implementing Working Set replacement}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & More information recorded about pages
+        && Associated with owning process
+        && Accumulated CPU time 
+        && Last referenced time
+        && Target age parameter 
+        & Age decisions are made on the basis of accumulated CPU time
+        && Page ages if owner runs without them
+        && Pages younger than a target age are preferrably not replaced
+        && Give pages older than target age away
+    \end{easylist}
+
+\subsection{Dynamic Equilibrium to the rescue}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Page stealing algorithm
+        && Every process is continuously losing and stealing pages
+        && Processes that reference more pages more often will accumulate larger working sets while others will find their set reduced
+        && Working sets adjust automatically
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L7: Arpaci-Dusseau Chapter 25: A Dialogue on Concurrency}
+\subsection{Dialogue}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Multi-threaded applications
+        && Threads access memory; we don't want multiple threads to access memory at same time
+        && OS supports primitives such as locks and condition variables
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L7: Arpaci-Dusseau Chapter 26: Concurrency: An Introduction}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Context switch
+        && Save state (program counter, registers) to thread control block
+        && Address space stays the same, so page table does not need to be switched
+        & Multiple stacks in address space if multiple threads
+        & Thread-local storage
+        && Stack of that thread
+    \end{easylist}
+
+\subsection{Why Use Threads?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Used threads to exploit parallelism
+        && If single processor, then not relevant
+        && Otherwise, parallelize and used thread per CPU
+        & Use threads to do someting when blocked program
+        && Instead of waiting for IO, just switch to another thread and do things
+        & Choose process for logically separate tasks with little sharing of data structures
+    \end{easylist}
+
+\subsection{An Example: Thread Creation}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Use pthreads
+        & Will run in different order according to scheduler
+        & May not be deterministic
+    \end{easylist}
+
+\subsection{The Heart Of The Problem: Uncontrolled Scheduling}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Race condition
+        && Execution depends on timing execution of code (indeterminate)
+        & Critical section
+        && Multiple threads executing code resulting in race condition
+        & Mutual exclusion
+        && If one thread executing inside critical section, others will be prevented
+    \end{easylist}
+
+\subsection{The Wish For Atomicity}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Atomic (all or nothing)
+        && Don't just have atomic instructions for all because too many instrucions
+        & Synchronization primitives
+        && General set of instructions to control multi-threaded programs
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L7: Arpaci-Dusseau Chapter 27: Interlude: Thread API}
+\subsection{Threads}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Use pthreat\_create to create new thread
+        & Use pthread\_join to wait for thread to complete
+        & Use pthread\_mutex\_lock and pthread\_mutex\_unlock to provide mutual exclusion to critical sections via locks
+        && Need to properly initialize and check that lock/unlock actually succeed
+        & Condition variables
+        && Enables thread to wait until particular condition occurs
+        && Needs lock and condition
+        && Sleeps until other thread signals
+        & Spinlock
+        && Wait in loop until lock available, consuming CPU cycles
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L7: User-Mode Thread Implementation}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Threads are independent schedulable unit of execution
+        && Runs within address space of process
+        && Has access to system resources from process
+        && Has own registers and stack
+    \end{easylist}
+
+\subsection{User/Kernel}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & User-level thread done without OS
+        && Allocates memory, dispathes thread, sleeps, exits, free memory
+        && If system call blocks, entire process blocks
+        && Cannot exploit multi-processors
+        & Kernel implemented threads
+        && Exploits multi-processors and switches between threads when one blocks
+    \end{easylist}
+\subsection{User/Kernel}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Non-preemptive scheduling
+        && User-mode threads are more efficient than kernel for contex-switches
+        & Preemptive scheduling
+        && Allowing OS to schedule is better than setting alarms and signals
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L7: Arpaci-Dusseau Chapter 25: A Dialogue on Concurrency}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & coordination of operations with other processes
+        && synchronization (e.g. mutexes and condition variables)
+        && the exchange of signals (e.g. kill(2))
+        && control operations (e.g. fork(2), wait(2), ptrace(2))
+        & the exchange of data between processes:
+        && uni-directional/bi-directional 
+    \end{easylist}
+
+\subsection{Simple Uni-Directional Byte Streams}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Pipes
+        && Opened by parent and inherited from child
+        && Each program in pipeline is unaware of what others do, byte streams are unstructured, etc
+        && If reader exhausts data in pipe, reader does not get EOF (is blocked instead)
+        && Flow control: Available buffering capacity of pipe may be limited, so writer may be blocked for reader to catch up
+        && Writing to pipe without open read fd is illegal (gets signal exception)
+        && When both read/write fd are closed, pipe file is deleted
+        & Only data privacy mechanisms are on initial/output file
+        && Generally no auth/encryption while passing
+    \end{easylist}
+
+\subsection{Named Pipes and Mailboxes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Named-pipe fifo
+        && Persistent pipe whos reader/writers can open by name (rather than inheriting)
+        && Writes may be interspersed
+        && Readers/writers can't authenticate identity
+        & Mailboxes
+        && Data is not bytestream, each write is stored as message
+        && Each write has authenticated ID
+        && Unprocessed msgs remain in mailbox
+    \end{easylist}
+
+\subsection{General Network Connections}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Higher level communication/service models
+        && Remote procedure calls - distributed request/response APIs
+        && RESTful service models - layered on HTTP GETS/PUTS
+        && Publish/Subscribe services - content based info flow
+        & Complexity
+        && Interoperability with software running different OS and ISA
+        && Security issues, changing addresses, failing connections
+    \end{easylist}
+
+\subsection{Shared Memory}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & High performance for Inter-Process Communication
+        && Efficiency wrt low cost per byte
+        && Throughput wrt bytes per second
+        && Latency wrt minimum delay
+        & Ultra high performance
+        && Shared memory by creating a file for communication
+        && Process maps file into virtual address space
+        && Is available immediately upon writing
+        && Very fast but can only be used on same memory bus
+        && Has no authentication and a single bug can kill both
+    \end{easylist}
+
+\subsection{Network Connections and Out-of-Band Signals}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Preempting queued operations
+        && Have a reserved out-of-band channel so signal can preempt others if urgent
+        && Adds overhead but allows important messages to skip FIFO line (network connection is FIFO)
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L7: Named pipes, Send, Recv, Mmap}
+\subsection{Named Pipes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Named pipes exist as device special file
+        & Can be accessed by processes of different ancestries
+        & When I/O done, pipe remains
+        & Normally, if FIFO opened for reading, process will block until another process opens it for writing
+        & If write to pipe without reader, will get SIGPIPE
+    \end{easylist}
+
+\subsection{Send}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Send a message on a socket
+    \end{easylist}
+
+\subsection{Recv}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Receive a message from a socket
+    \end{easylist}
+
+\subsection{Mmap}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Map or unmap files or devices into memory
+        & Creates a new mapping in the virtual address space of the calling process
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L8: Arpaci-Dussseau Chapter 28: A Dialogue on Concurrency}
 \subsection{A}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
     \end{easylist}
+%========================================================
+
+%========================================================
+\section{L6: Inter-Process Communication}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & 
+    \end{easylist}
+%========================================================
+
 \clearpage
 
 \end{document}  

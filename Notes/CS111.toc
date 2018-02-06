@@ -70,7 +70,7 @@
 \contentsline {subsection}{\numberline {13.2}Where Are Page Tables Stored?}{13}
 \contentsline {subsection}{\numberline {13.3}What’s Actually In The Page Table?}{13}
 \contentsline {subsection}{\numberline {13.4}Paging: Also Too Slow}{13}
-\contentsline {section}{\numberline {14}L5: Arpaci-Dusseau Chapter 19: Paging: Faster Translations (TLBs)}{13}
+\contentsline {section}{\numberline {14}L6: Arpaci-Dusseau Chapter 19: Paging: Faster Translations (TLBs)}{13}
 \contentsline {subsection}{\numberline {14.1}TLB Basic Algorithm}{13}
 \contentsline {subsection}{\numberline {14.2}Example: Accessing An Array}{14}
 \contentsline {subsection}{\numberline {14.3}Who Handles The TLB Miss?}{14}
@@ -92,5 +92,38 @@
 \contentsline {subsection}{\numberline {16.5}Considering Dirty Pages}{16}
 \contentsline {subsection}{\numberline {16.6}Other VM Policies}{16}
 \contentsline {subsection}{\numberline {16.7}Thrashing}{16}
-\contentsline {section}{\numberline {17}L6: Arpaci-Dusseau Chapter 2}{17}
-\contentsline {subsection}{\numberline {17.1}A}{17}
+\contentsline {section}{\numberline {17}L6: Working Sets}{17}
+\contentsline {subsection}{\numberline {17.1}LRU is not enough}{17}
+\contentsline {subsection}{\numberline {17.2}The concept of a Working Set}{17}
+\contentsline {subsection}{\numberline {17.3}Implementing Working Set replacement}{17}
+\contentsline {subsection}{\numberline {17.4}Dynamic Equilibrium to the rescue}{17}
+\contentsline {section}{\numberline {18}L7: Arpaci-Dusseau Chapter 25: A Dialogue on Concurrency}{18}
+\contentsline {subsection}{\numberline {18.1}Dialogue}{18}
+\contentsline {section}{\numberline {19}L7: Arpaci-Dusseau Chapter 26: Concurrency: An Introduction}{18}
+\contentsline {subsection}{\numberline {19.1}Introduction}{18}
+\contentsline {subsection}{\numberline {19.2}Why Use Threads?}{18}
+\contentsline {subsection}{\numberline {19.3}An Example: Thread Creation}{18}
+\contentsline {subsection}{\numberline {19.4}The Heart Of The Problem: Uncontrolled Scheduling}{18}
+\contentsline {subsection}{\numberline {19.5}The Wish For Atomicity}{18}
+\contentsline {section}{\numberline {20}L7: Arpaci-Dusseau Chapter 27: Interlude: Thread API}{19}
+\contentsline {subsection}{\numberline {20.1}Threads}{19}
+\contentsline {section}{\numberline {21}L7: User-Mode Thread Implementation}{19}
+\contentsline {subsection}{\numberline {21.1}Introduction}{19}
+\contentsline {subsection}{\numberline {21.2}User/Kernel}{19}
+\contentsline {subsection}{\numberline {21.3}User/Kernel}{19}
+\contentsline {section}{\numberline {22}L7: Arpaci-Dusseau Chapter 25: A Dialogue on Concurrency}{19}
+\contentsline {subsection}{\numberline {22.1}Introduction}{19}
+\contentsline {subsection}{\numberline {22.2}Simple Uni-Directional Byte Streams}{20}
+\contentsline {subsection}{\numberline {22.3}Named Pipes and Mailboxes}{20}
+\contentsline {subsection}{\numberline {22.4}General Network Connections}{20}
+\contentsline {subsection}{\numberline {22.5}Shared Memory}{20}
+\contentsline {subsection}{\numberline {22.6}Network Connections and Out-of-Band Signals}{20}
+\contentsline {section}{\numberline {23}L7: Named pipes, Send, Recv, Mmap}{21}
+\contentsline {subsection}{\numberline {23.1}Named Pipes}{21}
+\contentsline {subsection}{\numberline {23.2}Send}{21}
+\contentsline {subsection}{\numberline {23.3}Recv}{21}
+\contentsline {subsection}{\numberline {23.4}Mmap}{21}
+\contentsline {section}{\numberline {24}L8: Arpaci-Dussseau Chapter 28: A Dialogue on Concurrency}{21}
+\contentsline {subsection}{\numberline {24.1}A}{21}
+\contentsline {section}{\numberline {25}L6: Inter-Process Communication}{21}
+\contentsline {subsection}{\numberline {25.1}Introduction}{21}
