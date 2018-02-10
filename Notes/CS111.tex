@@ -1173,24 +1173,18 @@
         & If write to pipe without reader, will get SIGPIPE
     \end{easylist}
 
-\subsection{Send}
+\subsection{Send, Recv, Mmap}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & Send a message on a socket
+        & Send
+        && Send a message on a socket
+        & Recv
+        && Receive a message from a socket
+        & Mmap
+        && Map or unmap files or devices into memory
+        && Creates a new mapping in the virtual address space of the calling process
     \end{easylist}
-
-\subsection{Recv}
-    \begin{easylist}  
-    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & Receive a message from a socket
-    \end{easylist}
-
-\subsection{Mmap}
-    \begin{easylist}  
-    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & Map or unmap files or devices into memory
-        & Creates a new mapping in the virtual address space of the calling process
-    \end{easylist}
+\clearpage
 %========================================================
 
 %========================================================
@@ -1319,7 +1313,7 @@
 %========================================================
 
 %========================================================
-\section{L6: Arpaci-Dusseau Chapter 30.1: Condition Variables}
+\section{L8: Arpaci-Dusseau Chapter 30.1: Condition Variables}
 \subsection{Definition and Routines}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
@@ -1327,16 +1321,156 @@
         && Explicit queue for threads if condition is not met
         && When condition is correct, wakes
     \end{easylist}
+\clearpage
 %========================================================
 
 %========================================================
-\section{L6: Inter-Process Communication}
+\section{L9: Arpaci-Dusseau Chapter 29: Lock-based Concurrent Data Structures}
+\subsection{Concurrent Counters}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Simple but not Scalable Counter
+        && Use pthread\_mutex\_lock/unlock to create a threadsafe, concurrent data structure 
+        && Poor performance if multiple threads (compared to one thread)
+        & Sloppy Counter for Scalable Counting
+        && Numerous local physical counters (one per CPU core) as well as single global counter 
+        && Periodically transfer local values to global counter; reset local counter
+        && How often we transfer is determined by S, the sloppy threshold
+    \end{easylist}
+
+\subsection{Concurrent Linked Lists/Queues/Hash tables}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Concurrent Linked List
+        && Global lock or hand-over-hand lock
+        && Hand-over-hand locking tends to be too slow
+        & Concurrent Queue
+        && Lock for head and tail
+        && Dummy node to separate head and tail operations
+        & Concurrent Hash table
+        && Lock per hash bucket has good performance
+        & More concurrency may not be faster if there are many locks
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L9: Arpaci-Dusseau Chapter 30.2+: Condition Variables}
+\subsection{The Producer/Consumer (Bounded Buffer) Problem}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Bounded Buffer
+        && Producer puts data into it, consumer gets data from it
+        && Is a shared resource which requires synchronization
+        & Mesa Semantics
+        && No guarantee that the state will still be as desired when a woken thread runs
+        && Need to check condition before run, so while loop
+        & Hoare Semantics
+        && Stronger guarantee that woken thread will run immediately once woken
+        & Two condition variables
+        && Producers wait on empty and signal filled
+        && Consumers wait on filled and signal empty
+        & Spurious wakeups
+        && If multiple threads are woken up
+        && Use while loop to recheck condition a thread is waiting on
+        & Correct solution
+        && Producer sleeps only if all buffers are filled
+        && Consumer sleeps only if all buffers are empty
+    \end{easylist}
+
+\subsection{Covering Conditions}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Memory allocator problem
+        && If multiple threads sleep because need different amounts of memory (100, 10)
+        && Other thread frees memory (50), how does it know which thread to wake?
+        & Memory allocator solution
+        && Covering Condition will broadcast a signal to wake up all threads 
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L9: Arpaci-Dusseau Chapter 31: Semaphores}
+\subsection{Semaphores: A Definition}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Semaphore
+        && Sem\_wait() or P()
+        &&& Decrement counter and wait if negative
+        && Sem\_post() or V()
+        &&& Increment counter and wake up a thread if one is sleeping
+    \end{easylist}
+
+\subsection{Binary Semaphores (Locks)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Example of holding the lock
+        && Thread 0 calls sem\_wait() (decrements counter from 1 to 0), takes lock, and enters
+        && Thread 1 calls sem\_wait() (decrements counter from 0 to -1) and waits
+        && Thread 0 runs and calls call\_post() (increment counter from -1 to 0) and wakes thread 1
+        && Thread 1 runs and calls call\_post() (increment counter from 0 to 1)
+        & Binary semaphore
+        && Call a semaphore used only as a lock (held or not held) a binary semaphore
+    \end{easylist}
+
+\subsection{Semaphores For Ordering}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Semaphores for child to run before parent
+        && Initiate counter to 0, parent calls sem\_wait(), child calls sem\_post(), parent finishes
+        && Initiate counter to 0, child calls sem\_post(), parent finishes
+    \end{easylist}
+
+\subsection{The Producer/Consumer (Bounded Buffer) Problem}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Multiple producers/consumers
+        && Need mutex because filling buffer and incrementing index of buffer is a critical section
+        && Mutex should be inside of the wait()/post() to avoid deadlock
+    \end{easylist}
+
+\subsection{Reader-Writer Locks}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Reader-writer lock
+        && Multiple reads can occur at same time if no write
+        && Write has to wait if there are reads going on
+        & Overhead might make it not worthwhile wrt performance
+    \end{easylist}
+
+\subsection{Dining Philosophers}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Problem
+        && There are 5 philosophers at around table with 5 forks
+        && Each philosopher wants to think (does not need any fork) and eat (needs both left and right fork)
+        & Solution
+        && Each philosopher, except one, grabs right fork before left fork
+        && Last philosopher grabs left fork before right fork
+        & If all philosophers grabbed forks in same order, a deadlock may occur
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L9: Flock and Lockf}
+\subsection{Man}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & flock
+        && Apply or remove an advisory lock on the open file
+        && A single file may not simultaneously have both shared and exclusive locks
+        & lockf
+        && Apply, test or remove a POSIX lock on a section of an open file
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L10: Arpaci-Dusseau Chapter 29: }
 \subsection{Introduction}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
     \end{easylist}
-
 \clearpage
 
 \end{document}  
