@@ -28,6 +28,8 @@ void SortedList_insert(SortedList_t* list, SortedListElement_t* element){
     SortedListElement_t* next = list->next;
 
     while (next != list && strcmp(next->key, element->key) <= 0){
+        if (opt_yield & INSERT_YIELD)
+            sched_yield();
         prev = next;
         next = next->next;
     }
@@ -87,6 +89,8 @@ SortedListElement_t* SortedList_lookup(SortedList_t* list, const char* key){
 
     SortedListElement_t* curr = list->next;
     while (curr != list && strcmp(curr->key, key) != 0){
+        if (opt_yield & LOOKUP_YIELD)
+            sched_yield();
         curr = curr->next;
     }
     if (curr == list)
@@ -112,13 +116,16 @@ int SortedList_length(SortedList_t* list){
     int count = 0;
     while (curr != list){
         count++;
+        if (opt_yield & LOOKUP_YIELD)
+            sched_yield();
+        
         curr = curr->next;
     }
 
     return count;
 }
 
-
+/*
 int main(){ 
     // Init
     SortedList_t list;
@@ -197,3 +204,4 @@ int main(){
     }
     printf("%d\n", SortedList_length(&list));
 } 
+*/

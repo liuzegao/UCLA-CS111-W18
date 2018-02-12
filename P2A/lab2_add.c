@@ -104,7 +104,7 @@ void add(long long *pointer, long long value) {
 }
 */
 
-void* add_sub(){
+void* add_sub_all(){
     long long old, new;
     for (long long val = -1; val <= 1; val += 2){
         for (int i = 0; i < n_iterations; i++){
@@ -129,6 +129,8 @@ void* add_sub(){
                         old = counter;
                         new = old + val;
                     } while(__sync_val_compare_and_swap(&counter, old, new) != old);
+                    break;
+                default:
                     break;
             }
         }
@@ -157,7 +159,7 @@ int main(int argc, char **argv){
 
     // Starts the specified number of threads
     for (int i = 0; i < n_threads; i++) {
-        if (pthread_create(&thread_IDs[i], NULL, add_sub, NULL) != 0) {
+        if (pthread_create(&thread_IDs[i], NULL, add_sub_all, NULL) != 0) {
             fprintf(stderr, "Error: pthread_create failed\n");
             free(thread_IDs);       // swithc to atexit?
             exit(1);

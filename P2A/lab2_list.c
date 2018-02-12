@@ -29,7 +29,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int spin_lock = 0;
 SortedList_t* list;
 SortedListElement_t* list_elements;
-
+long long* start_pos;
 
 // Get-opt Long Options parsing
 void process_args(int argc, char **argv){
@@ -117,29 +117,13 @@ void process_name(){
     else{
         strcat(test_name, "-none");
     }
-
 }
 
 char generate_random_char(){
     return (char) rand() % 256;
 }
 
-void* insert_delete(void* start_pos){
-    printf("%lld\n", *((long long*) start_pos));
-
-    for (long long i = *((long long*) start_pos); i < *((long long*) start_pos) + n_iterations; i++){
-        printf("%c\n", *list_elements[i].key);
-    }
-
-    printf("\n");
-    return NULL;
-}
-
-int main(int argc, char **argv){
-    // Process command line args
-    process_args(argc, argv);
-    process_name();
-
+void init_list(){
     // Initializes an empty list
     list = malloc(sizeof(SortedList_t));
     list->key = NULL;
@@ -152,15 +136,71 @@ int main(int argc, char **argv){
     srand(time(0));
     for (long long i = 0; i < n_list_elements; i++){
         char* key = malloc(sizeof(char));
+        if (key == NULL) {
+            fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
+            exit(1);
+        }
         *key = generate_random_char();
         list_elements[i].key = key;
     }
 
     // Record starting position in list_elements for each thread
-    long long* start_pos = malloc(sizeof(long long) * n_threads);
+    start_pos = malloc(sizeof(long long) * n_threads);
+    if (start_pos == NULL) {
+        fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
+        exit(1);
+    }
     for (long long i = 0; i < n_threads; i++){
         start_pos[i] = i * n_iterations;
     }
+}
+
+void insert_delete(long long ins_or_del, long long i){
+    if (ins_or_del == 0) {
+        SortedList_insert(list, list_elements + i);
+    }
+    else {
+        SortedListElement_t* curr = SortedList_lookup(list, list_elements[i].key);
+        if (curr == NULL){
+            fprintf(stderr, "Error: corrupted list\n");
+            exit(2);
+        }
+        SortedList_delete(curr);
+    }
+}
+
+void* insert_delete_all(void* start_pos){
+    for (long long ins_or_del = 0; ins_or_del <= 1; ins_or_del++){
+        for (long long i = *((long long*) start_pos); i < *((long long*) start_pos) + n_iterations; i++){
+            switch(add_version){
+                case NO_LOCK:
+                    insert_delete(ins_or_del, i);
+                    break;
+                case MUTEX:
+                    pthread_mutex_lock(&mutex);
+                    insert_delete(ins_or_del, i);
+                    pthread_mutex_unlock(&mutex);
+                    break;
+                case SPIN_LOCK:
+                    while(__sync_lock_test_and_set(&spin_lock, 1));
+                    insert_delete(ins_or_del, i);
+                    __sync_lock_release(&spin_lock);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    return NULL;
+}
+
+int main(int argc, char **argv){
+    // Process command line args
+    process_args(argc, argv);
+    process_name();
+
+    // Init list
+    init_list();
 
     // Malloc space for thread pointers
     pthread_t* thread_IDs = (pthread_t*) malloc(n_threads * sizeof(pthread_t));
@@ -178,7 +218,7 @@ int main(int argc, char **argv){
 
     // Starts the specified number of threads
     for (int i = 0; i < n_threads; i++) {
-        if (pthread_create(&thread_IDs[i], NULL, insert_delete, start_pos + i) != 0) {
+        if (pthread_create(&thread_IDs[i], NULL, insert_delete_all, start_pos + i) != 0) {
             fprintf(stderr, "Error: pthread_create failed\n");
             free(thread_IDs);       // swithc to atexit?
             exit(1);
@@ -198,6 +238,11 @@ int main(int argc, char **argv){
     if (clock_gettime(CLOCK_MONOTONIC, &end_time) == -1){
         fprintf(stderr, "Error: clock_gettime failed\n%s\n", strerror(errno));
         exit(1);
+    }
+
+    if (SortedList_length(list) != 0){
+        fprintf(stderr, "Error: corrupted list\n");
+        exit(2);
     }
 
     // Calculate elapsed time
