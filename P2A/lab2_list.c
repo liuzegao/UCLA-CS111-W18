@@ -10,6 +10,7 @@
 #include <time.h>           // clock and time
 #include <pthread.h>        // posix threads
 #include "SortedList.h"
+#include <signal.h>
 
 
 #define NO_LOCK             'n'
@@ -25,6 +26,8 @@ char add_version = NO_LOCK; //
 
 // Globals
 char test_name[20] = "list";
+pthread_t* thread_IDs;
+long long n_list_elements = 0;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
 int spin_lock = 0;
 SortedList_t* list;
@@ -119,6 +122,15 @@ void process_name(){
     }
 }
 
+void free_all(){
+    free(thread_IDs);
+    free(list);
+    for (int i = 0; i < n_list_elements; i++)
+        free((void*) list_elements[i].key);
+    free(list_elements);
+    free(start_pos);
+}
+
 char generate_random_char(){
     return (char) rand() % 256;
 }
@@ -131,12 +143,14 @@ void init_list(){
     list->prev = list;
 
     // Creates and initializes (with random keys) the required number (threads x iterations) of list elements
-    long long n_list_elements = n_threads * n_iterations;
+    n_list_elements = n_threads * n_iterations;
     list_elements = malloc(sizeof(SortedListElement_t) * n_list_elements);
     srand(time(0));
     for (long long i = 0; i < n_list_elements; i++){
         char* key = malloc(sizeof(char));
         if (key == NULL) {
+            free(list);
+            free(list_elements);
             fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
             exit(1);
         }
@@ -147,6 +161,10 @@ void init_list(){
     // Record starting position in list_elements for each thread
     start_pos = malloc(sizeof(long long) * n_threads);
     if (start_pos == NULL) {
+        free(list);
+        for (int i = 0; i < n_list_elements; i++)
+            free((void*) list_elements[i].key);
+        free(list_elements);
         fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
         exit(1);
     }
@@ -194,20 +212,31 @@ void* insert_delete_all(void* start_pos){
     return NULL;
 }
 
+void sig_handler(int signum) {
+    if (signum == SIGSEGV) {
+        fprintf(stderr, "Error: Segmentation Fault\n");
+        exit(2);
+    }
+}
+
 int main(int argc, char **argv){
     // Process command line args
     process_args(argc, argv);
     process_name();
 
+    signal(SIGSEGV, sig_handler);
+
+
     // Init list
     init_list();
 
     // Malloc space for thread pointers
-    pthread_t* thread_IDs = (pthread_t*) malloc(n_threads * sizeof(pthread_t));
+    thread_IDs = (pthread_t*) malloc(n_threads * sizeof(pthread_t));
     if (thread_IDs == NULL) {
         fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
         exit(1);
     }
+    atexit(free_all);
 
     // Record start time
     struct timespec start_time;
@@ -220,7 +249,6 @@ int main(int argc, char **argv){
     for (int i = 0; i < n_threads; i++) {
         if (pthread_create(&thread_IDs[i], NULL, insert_delete_all, start_pos + i) != 0) {
             fprintf(stderr, "Error: pthread_create failed\n");
-            free(thread_IDs);       // swithc to atexit?
             exit(1);
         }
     }

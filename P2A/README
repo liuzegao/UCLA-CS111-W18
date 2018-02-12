@@ -63,14 +63,14 @@ QUESTION 2.2.1 - scalability of Mutex
     2.2.1.B) Comment on the general shapes of the curves, and explain why they have this shape.
     2.2.1.C) Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
 ANSWER 2.2.1
-    2.2.1.A) 
-    2.2.1.B) 
-    2.2.1.C) 
+    2.2.1.A) The variation in time per mutex-protected operation for part-1 relative to the number of threads grows then begins to asymptote. The variation in time per mutex-protected operation for part-2 relative to the number of threads grows and does appear to asymptote.
+    2.2.1.B) The shape of the curve in part 1 is less steep than in part 2. This is likely because insert and delete spend a lot of time locking when there are many threads; thus, each operation takes a longer amount of time as we add more threads. 
+    2.2.1.C) The shape of the curve in part 1 is due to to the additional overhead from context switches. It begins to asymptote because mutexes do not wake up all threads, so there is less context switching relative to the number of threads as we add more threads. The shape of the curve in part 2 continues increasing because insert and delete require more and more locks as there are more threads. This is because insert and delete require locks to traverse.
 ---
 QUESTION 2.2.2 - scalability of spin locks
     2.2.2.A) Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
     2.2.2.B) Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
 ANSWER 2.2.2
-    2.2.2.A)
-    2.2.2.B)
+    2.2.2.A) The variation in time per protected operation vs the number of threads for mutexes is generally less than spin locks. This is because spinlocks spend a lot of time spinning, rather than blocking and switching to a new thread. Both curves grow with the number of threads; this is because more threads are competing for the lock. 
+    2.2.2.B) Spinlocks grow faster than mutexes because they waste time spinning instead of sleeping and switching to a new thread.
 ---

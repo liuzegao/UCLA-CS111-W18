@@ -161,7 +161,7 @@ int main(int argc, char **argv){
     for (int i = 0; i < n_threads; i++) {
         if (pthread_create(&thread_IDs[i], NULL, add_sub_all, NULL) != 0) {
             fprintf(stderr, "Error: pthread_create failed\n");
-            free(thread_IDs);       // swithc to atexit?
+            free(thread_IDs);
             exit(1);
         }
     }
@@ -173,6 +173,7 @@ int main(int argc, char **argv){
             exit(1);
         }
     }
+    free(thread_IDs);
 
     // Record end time
     struct timespec end_time;
