@@ -53,18 +53,19 @@ void process_args(int argc, char **argv){
                 n_iterations = atoi(optarg);
                 break;
             case 's':
-                if (optarg[0] == MUTEX) {
-                    add_version = MUTEX;
-                } 
-                else if (optarg[0] == SPIN_LOCK) {
-                    add_version = SPIN_LOCK;
-                } 
-                else if (optarg[0] == COMPARE_AND_SWAP) {
-                    add_version = COMPARE_AND_SWAP;
-                } 
-                else {
-                    fprintf(stderr, "Error: unrecognized argument\n");
-                    exit(1);
+                switch (optarg[0]){
+                    case MUTEX:
+                        add_version = MUTEX;
+                        break;
+                    case SPIN_LOCK:
+                        add_version = SPIN_LOCK;
+                        break;
+                    case COMPARE_AND_SWAP:
+                        add_version = COMPARE_AND_SWAP;
+                        break;
+                    default:
+                        fprintf(stderr, "Error: unrecognized argument\n");
+                        exit(1);
                 }
                 break;
             default:
@@ -78,7 +79,7 @@ void process_name(){
     if (opt_yield == 1){
         strcat(test_name, "-yield");
     }
-    if (add_version != 'n'){
+    if (add_version != NO_LOCK){
         strcat(test_name, "-");
         strcat(test_name, &add_version);
     }
@@ -140,17 +141,17 @@ int main(int argc, char **argv){
     process_args(argc, argv);
     process_name();
 
-    // Record start time
-    struct timespec start_time;
-    if (clock_gettime(CLOCK_MONOTONIC, &start_time) == -1){
-        fprintf(stderr, "Error: clock_gettime failed\n%s\n", strerror(errno));
-        exit(1);
-    }
-
     // Malloc space for thread pointers
     pthread_t* thread_IDs = (pthread_t*) malloc(n_threads * sizeof(pthread_t));
     if (thread_IDs == NULL) {
         fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
+        exit(1);
+    }
+
+    // Record start time
+    struct timespec start_time;
+    if (clock_gettime(CLOCK_MONOTONIC, &start_time) == -1){
+        fprintf(stderr, "Error: clock_gettime failed\n%s\n", strerror(errno));
         exit(1);
     }
 
@@ -190,12 +191,5 @@ int main(int argc, char **argv){
     // Prints to stdout a comma-separated-value
     printf("%s,%d,%d,%lld,%lld,%lld,%lld\n", test_name, n_threads, n_iterations, n_operations, elapsed_time_ns, time_per_operation, counter);
 
-    exit(0);
+    exit(0);//deal with freeing shit
 }
-
-
-
-
-
-
-

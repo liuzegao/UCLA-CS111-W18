@@ -1,50 +1,76 @@
 NAME: Quentin Truong
 EMAIL: quentintruong@gmail.com
 ID: 404782322
-
-Description:
-lab2_add.c ... a C program that implements and tests a shared variable add function, implements the (below) specified command line options, and produces the (below) specified output statistics.
-SortedList.h ... a header file (supplied by us) describing the interfaces for linked list operations.
-SortedList.c ... a C module that implements insert, delete, lookup, and length methods for a sorted doubly linked list (described in the provided header file, including correct placement of yield calls).
-lab2_list.c ... a C program that implements the (below) specified command line options and produces the (below) specified output statistics.
-Makefile to build the deliverable programs (lab2_add and lab2_list), output, graphs, and tarball
+---
+(at least) Four C source modules that compile cleanly with no errors or warnings):
+    lab2_add.c ... a C program that implements and tests a shared variable add function, implements the (below) specified command line options, and produces the (below) specified output statistics.
+    SortedList.h ... a header file (supplied by us) describing the interfaces for linked list operations.
+    SortedList.c ... a C module that implements insert, delete, lookup, and length methods for a sorted doubly linked list (described in the provided header file, including correct placement of yield calls).
+    lab2_list.c ... a C program that implements the (below) specified command line options and produces the (below) specified output statistics.
+Makefile ... build the deliverable programs (lab2_add and lab2_list), output, graphs, and tarball
 lab2_add.csv ... containing all of your results for all of the Part-1 tests.
 lab2_list.csv ... containing all of your results for all of the Part-2 tests.
-lab2_add-1.png ... threads and iterations required to generate a failure (with and without yields)
-lab2_add-2.png ... average time per operation with and without yields.
-lab2_add-3.png ... average time per (single threaded) operation vs. the number of iterations.
-lab2_add-4.png ... threads and iterations that can run successfully with yields under each of the synchronization options.
-lab2_add-5.png ... average time per (protected) operation vs. the number of threads.
-lab2_list-1.png ... average time per (single threaded) unprotected operation vs. number of iterations (illustrating the correction of the per-operation cost for the list length).
-lab2_list-2.png ... threads and iterations required to generate a failure (with and without yields).
-lab2_list-3.png ... iterations that can run (protected) without failure.
-lab2_list-4.png ... (length-adjusted) cost per operation vs the number of threads for the various synchronization options.
-README containing descriptions of each of the included files and any other information about your submission that you would like to bring to our attention (e.g. research, limitations, features, testing methodology).
-brief (1-4 sentences per question) answers to each of the questions (below).
-
+graphs (.png files), created by running gnuplot(1) on the above .csv files with the supplied data reduction scripts.
+    For part 1 (lab2_add):
+        lab2_add-1.png ... threads and iterations required to generate a failure (with and without yields)
+        lab2_add-2.png ... average time per operation with and without yields.
+        lab2_add-3.png ... average time per (single threaded) operation vs. the number of iterations.
+        lab2_add-4.png ... threads and iterations that can run successfully with yields under each of the synchronization options.
+        lab2_add-5.png ... average time per (protected) operation vs. the number of threads.
+    For part 2 (lab2_list):
+        lab2_list-1.png ... average time per (single threaded) unprotected operation vs. number of iterations (illustrating the correction of the per-operation cost for the list length).
+        lab2_list-2.png ... threads and iterations required to generate a failure (with and without yields).
+        lab2_list-3.png ... iterations that can run (protected) without failure.
+        lab2_list-4.png ... (length-adjusted) cost per operation vs the number of threads for the various synchronization options.
+any other scripts or files required to generate your results
+    generate_data.sh ... tests programs
+README ... descriptions, answers to questions
+---
 QUESTION 2.1.1 - causing conflicts:
-Why does it take many iterations before errors are seen?
-Why does a significantly smaller number of iterations so seldom fail?
-
+    2.1.1.A) Why does it take many iterations before errors are seen?
+    2.1.1.B) Why does a significantly smaller number of iterations so seldom fail?
+ANSWER 2.1.1
+    2.1.1.A) If there are a small number of iterations, there may be no parallelism at all. This is because the time it takes to run pthread_create is longer than the time to complete the add task.
+    2.1.1.B) A smaller number of iterations seldom fails because each thread's task is completed before a new thread is created, thus there is no race condition.
+---
 QUESTION 2.1.2 - cost of yielding:
-Why are the --yield runs so much slower?
-Where is the additional time going?
-Is it possible to get valid per-operation timings if we are using the --yield option?
-If so, explain how. If not, explain why not.
-
+    2.1.2.A) Why are the --yield runs so much slower?
+    2.1.2.B) Where is the additional time going?
+    2.1.2.C) Is it possible to get valid per-operation timings if we are using the --yield option?
+    2.1.2.D) If so, explain how. If not, explain why not.
+ANSWER 2.1.2
+    2.1.2.A) The --yield will cause the program to context switch more often, which makes the program slower.
+    2.1.2.B) The additional time is going to context switches.
+    2.1.2.C) No.
+    2.1.2.D) It is not possible because we are only aware of wall time, not CPU time. To be obtain accurate per-operation timings, we would need to know the elapsed CPU time, which is not possible (in this program) with multiple threads using yield.
+---
 QUESTION 2.1.3 - measurement errors:
-Why does the average cost per operation drop with increasing iterations?
-If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
-
+    2.1.3.A) Why does the average cost per operation drop with increasing iterations?
+    2.1.3.B) If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
+ANSWER 2.1.3
+    2.1.3.A) The average cost per operation drops with increasing iterations because the cost of pthread_create is included in the time calculation. As we increase the number of iterations, the amortized cost for pthread_create drops to zero; however, with few iterations, the cost of pthread_create is significant relative to the cost of the add routine; thus, each operation appears to have a higher time cost.
+    2.1.3.B) We know the correct number of iteratons to run when the slope between cost per iteration and number of iterations is approximately zero. This is because the amortized cost of pthread_create will be approximately zero.
+---
 QUESTION 2.1.4 - costs of serialization:
-Why do all of the options perform similarly for low numbers of threads?
-Why do the three protected operations slow down as the number of threads rises?
-
+    2.1.4.A) Why do all of the options perform similarly for low numbers of threads?
+    2.1.4.B) Why do the three protected operations slow down as the number of threads rises?
+ANSWER 2.1.4
+    2.1.4.A) All options will have similar performance for low number of threads because there is a low chance of the need for lock contention, thus is less likely to spend time using locks.
+    2.1.4.B) All three prtected operations slow down as the number of threads increase because there is a higher chance of lock contention, thus it will spend time locked to protect data.
+---
 QUESTION 2.2.1 - scalability of Mutex
-Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
-Comment on the general shapes of the curves, and explain why they have this shape.
-Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
-
+    2.2.1.A) Compare the variation in time per mutex-protected operation vs the number of threads in Part-1 (adds) and Part-2 (sorted lists).
+    2.2.1.B) Comment on the general shapes of the curves, and explain why they have this shape.
+    2.2.1.C) Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+ANSWER 2.2.1
+    2.2.1.A) 
+    2.2.1.B) 
+    2.2.1.C) 
+---
 QUESTION 2.2.2 - scalability of spin locks
-Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
-Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+    2.2.2.A) Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.
+    2.2.2.B) Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
+ANSWER 2.2.2
+    2.2.2.A)
+    2.2.2.B)
+---
