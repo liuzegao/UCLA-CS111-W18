@@ -173,9 +173,15 @@ void init_list(){
     }
 }
 
-void insert_delete(long long ins_or_del, long long i){
-    if (ins_or_del == 0) {
+void insert_length_delete(long long ins_len_del, long long i){
+    if (ins_len_del == 0) {
         SortedList_insert(list, list_elements + i);
+    }
+    else if (ins_len_del == 1){
+        if (SortedList_length(list) == -1){
+            fprintf(stderr, "Error: corrupted list\n");
+            exit(2);
+        }
     }
     else {
         SortedListElement_t* curr = SortedList_lookup(list, list_elements[i].key);
@@ -183,30 +189,35 @@ void insert_delete(long long ins_or_del, long long i){
             fprintf(stderr, "Error: corrupted list\n");
             exit(2);
         }
-        SortedList_delete(curr);
+        if (SortedList_delete(curr) == 1){
+            fprintf(stderr, "Error: corrupted list\n");
+            exit(2);
+        }
     }
 }
 
 void* insert_delete_all(void* start_pos){
-    for (long long ins_or_del = 0; ins_or_del <= 1; ins_or_del++){
+    for (long long ins_len_del = 0; ins_len_del <= 2; ins_len_del++){
         for (long long i = *((long long*) start_pos); i < *((long long*) start_pos) + n_iterations; i++){
             switch(add_version){
                 case NO_LOCK:
-                    insert_delete(ins_or_del, i);
+                    insert_length_delete(ins_len_del, i);
                     break;
                 case MUTEX:
                     pthread_mutex_lock(&mutex);
-                    insert_delete(ins_or_del, i);
+                    insert_length_delete(ins_len_del, i);
                     pthread_mutex_unlock(&mutex);
                     break;
                 case SPIN_LOCK:
                     while(__sync_lock_test_and_set(&spin_lock, 1));
-                    insert_delete(ins_or_del, i);
+                    insert_length_delete(ins_len_del, i);
                     __sync_lock_release(&spin_lock);
                     break;
                 default:
                     break;
             }
+            if (ins_len_del == 1)
+                break;
         }
     }
     return NULL;

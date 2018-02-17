@@ -30,7 +30,7 @@ QUESTION 2.1.1 - causing conflicts:
     2.1.1.A) Why does it take many iterations before errors are seen?
     2.1.1.B) Why does a significantly smaller number of iterations so seldom fail?
 ANSWER 2.1.1
-    2.1.1.A) If there are a small number of iterations, there may be no parallelism at all. This is because the time it takes to run pthread_create is longer than the time to complete the add task.
+    2.1.1.A) If there are a small number of iterations, the counting routine may complete before the next thread is created. This is because the time it takes to run pthread_create may be longer than the time to complete the loops.
     2.1.1.B) A smaller number of iterations seldom fails because each thread's task is completed before a new thread is created, thus there is no race condition.
 ---
 QUESTION 2.1.2 - cost of yielding:
@@ -39,7 +39,7 @@ QUESTION 2.1.2 - cost of yielding:
     2.1.2.C) Is it possible to get valid per-operation timings if we are using the --yield option?
     2.1.2.D) If so, explain how. If not, explain why not.
 ANSWER 2.1.2
-    2.1.2.A) The --yield will cause the program to context switch more often, which makes the program slower.
+    2.1.2.A) The --yield will cause the thread to relinquish the CPU, allowing a different thread to run. These context switches make the program slower.
     2.1.2.B) The additional time is going to context switches.
     2.1.2.C) No.
     2.1.2.D) It is not possible because we are only aware of wall time, not CPU time. To be obtain accurate per-operation timings, we would need to know the elapsed CPU time, which is not possible (in this program) with multiple threads using yield.
@@ -48,8 +48,8 @@ QUESTION 2.1.3 - measurement errors:
     2.1.3.A) Why does the average cost per operation drop with increasing iterations?
     2.1.3.B) If the cost per iteration is a function of the number of iterations, how do we know how many iterations to run (or what the "correct" cost is)?
 ANSWER 2.1.3
-    2.1.3.A) The average cost per operation drops with increasing iterations because the cost of pthread_create is included in the time calculation. As we increase the number of iterations, the amortized cost for pthread_create drops to zero; however, with few iterations, the cost of pthread_create is significant relative to the cost of the add routine; thus, each operation appears to have a higher time cost.
-    2.1.3.B) We know the correct number of iteratons to run when the slope between cost per iteration and number of iterations is approximately zero. This is because the amortized cost of pthread_create will be approximately zero.
+    2.1.3.A) The average cost per operation drops with increasing iterations because the cost of pthread_create is included in the time calculation. As we increase the number of iterations, the amortized cost for pthread_create drops to zero; however, with few iterations, the cost of pthread_create is significant relative to the cost of the add routine - thus, each operation appears to have a higher time cost.
+    2.1.3.B) We know the correct number of iteratons to run is when the slope of cost per iteration vs. number of iterations is approximately zero (flat line). This is because the amortized cost of pthread_create will be approximately zero.
 ---
 QUESTION 2.1.4 - costs of serialization:
     2.1.4.A) Why do all of the options perform similarly for low numbers of threads?
@@ -63,9 +63,9 @@ QUESTION 2.2.1 - scalability of Mutex
     2.2.1.B) Comment on the general shapes of the curves, and explain why they have this shape.
     2.2.1.C) Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
 ANSWER 2.2.1
-    2.2.1.A) The variation in time per mutex-protected operation for part-1 relative to the number of threads grows then begins to asymptote. The variation in time per mutex-protected operation for part-2 relative to the number of threads grows and does appear to asymptote.
-    2.2.1.B) The shape of the curve in part 1 is less steep than in part 2. This is likely because insert and delete spend a lot of time locking when there are many threads; thus, each operation takes a longer amount of time as we add more threads. 
-    2.2.1.C) The shape of the curve in part 1 is due to to the additional overhead from context switches. It begins to asymptote because mutexes do not wake up all threads, so there is less context switching relative to the number of threads as we add more threads. The shape of the curve in part 2 continues increasing because insert and delete require more and more locks as there are more threads. This is because insert and delete require locks to traverse.
+    2.2.1.A) The variation in time per mutex-protected operation for part-1 relative to the number of threads grows then begins to asymptote. The variation in time per mutex-protected operation for part-2 relative to the number of threads grows.
+    2.2.1.B) The shape of the curve in part 1 is less steep than in part 2. This is because insert and delete are expensive operations and spend a lot of time locking when there are many threads; thus, each operation takes a longer amount of time as we add more threads. 
+    2.2.1.C) The shape of the curve in part 1 is due to to the additional overhead from context switches. It begins to asymptote because mutexes do not wake up all threads, so there is less context switching relative to the number of threads as we add more threads. The shape of the curve in part 2 continues increasing because insert and delete require more and more locks as there are more threads. This is because insert and delete require locks to traverse (because an insert/delete may occur while you traverse).
 ---
 QUESTION 2.2.2 - scalability of spin locks
     2.2.2.A) Compare the variation in time per protected operation vs the number of threads for list operations protected by Mutex vs Spin locks. Comment on the general shapes of the curves, and explain why they have this shape.

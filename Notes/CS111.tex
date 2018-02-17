@@ -1465,8 +1465,269 @@
 %========================================================
 
 %========================================================
-\section{L10: Arpaci-Dusseau Chapter 29: }
+\section{L10: Arpaci-Dusseau Chapter 32: Common Concurrency Problems}
+\subsection{Non-Deadlock Bugs}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Atomicity-Violation Bugs
+        && Ex: First thread performs check for not null, then dereferences; Second thread sets value to null
+        && The desired serializability among multiple memory accesses is violated
+        && Can use locks to fix this
+        & Order-Violation Bugs
+        && Ex: First thread inits and uses; second thread just uses (assumes it was init)
+        && Can use condition variables to enforce order
+    \end{easylist}
+
+\subsection{Deadlock Bugs}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Hard to find deadlock bugs
+        && Encapsulation + modularity does not mesh with locking
+        & Conditions for Deadlock
+        && Mutual Exclusion - threads claim exclusive control of resources they require
+        && Hold-and-wait - threads hold resources while waiting for additional resources
+        && No preemption - resources cannot be forcibly removed from threads holding them
+        && Circular waits - circular chain of threads each holding a resource required by the next thread in the chain
+        && All these conditions must occur together for deadlock to occur
+        & Prevention
+        && Circular wait
+        &&& provide total/partial ordering such that no cyclical waiting may occur
+        &&& Is difficult to find order, and is only a convention/suggestion (not enforced
+        && Hold-and-wait
+        &&& Prevention lock prevents deadlock from context switch during lock acquisition
+        && No Preemption
+        &&& Use trylock to grab the lock or return error if it doesn't work
+        &&& Livelock could occur (two threads repeatedly failing to acquire both locks)
+        &&& Difficult because would have to release everything acquired
+        && Mutual Exclusion
+        &&& Use lock-free and wait-free data structures (built using powerful hardware instructions)
+        && knowledge of which threads need which locks
+        &&& Schedule threads on multiple CPU's such that threads which need the same lock are never run together
+        &&& Rarely used approach
+        && Detect and Recover
+        &&& Tom West's Law - "Not everything worth doing is worth doing well"
+        &&& Just let the computer freeze if it only happens once/yr on consumer PC
+        & Use a different concurrency model
+        && MapReduce (from Google)
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Deadlock avoidance}
 \subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Deadlock arises from exhaustion of critical resource
+        && This time, the problem is not a resource dependency graph
+        && Problem is that some processes will free up memory once complete, but require additional memory to complete
+        && Solution is to refuse to grant requests which would put the system in a dangerously resource-depleted state
+    \end{easylist}
+
+\subsection{Reservations}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Declining allocation mid-operation is hard
+        && Solution is to make processes reserve resources beforehand
+        && Extends to creating new files, processes, and sockets
+    \end{easylist}
+
+\subsection{Over-booking}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Few users request their maximum resource allocation
+        && So is relatively safe to over-book resources
+        && Airlines and networks both do this
+        && OS does not do this with memory because running out of memory and having to kill a process is extremely bad
+        & Dealing with Rejection
+        && OK to reject requests, because the error is clean and we can move on
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Health Monitoring and Recovery}
+\subsection{Introduction + Health Monitoring}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Formal deadlock detection is difficult to perform + inadequate for most problems
+        & Health Monitoring
+        && Internal monitoring agent has transaction log
+        &&& This agent may fail
+        && Clients submit failure report to central monitoring service
+        &&& But maybe other requests failed
+        && Server sends heart beat to central monitoring service
+        &&& This does not tell if server is serving requests
+        && External health monitoring service periodically sends tests to servers
+        &&& But maybe other requests failed
+        & Use a combination of methods 
+    \end{easylist}
+
+\subsection{Managed Recovery}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Highly available services
+        && Must be designed to be killed and restarted at any time
+        & Restart types
+        && Warm-start - restore from last saved state
+        && Cold-start - ignore any saved state and restart from scratch
+        && Reset and reboot - reboot system and cold-start 
+        && Restart single process
+        && Restart groups of processes
+        && Restart software on a node
+        && Restart groups or nodes or entire system
+    \end{easylist}
+
+\subsection{False Reports and Other Restarts}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Tradeoff between cancelling all requests for a restart vs. prolonging outage
+        && Misdiagnosing problem may be even worse
+        && Preferable for server to detect its own problems and restart components
+        & Non-disruptive rolling upgrades
+        && If system can operate without some of its nodes, then restart nodes one-at-a-time while upgrading
+        && New software must be upwards compatible; must be able to roll-back to previous release
+        & Prophylactic reboots
+        && Periodically reboot system because it seems to fix problems
+        && Systems become slower as time progresses, so just restart it regularly
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Java Synchronized Methods}
+\subsection{Synchronized Methods}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Add to declaration of function 
+        && Two invocations of synchronized methods on same object will not interleave
+        && Synchronized method has happens-before relationship with any subsequent invocation of synchronized method
+        & Constructors cannot be synchronized (because it does not make sense)
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Java Intrinsic Locks + Synchronization}
+\subsection{Intrinsic Locks and Synchronization}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Internal entity known as intrinsic lock or monitor lock
+        && If thread owns lock, no other thread can acquire
+        && Once thread releases, happens-before relationship established between this and subsequent acquisitions of the lock
+        && When thread invokes synchronized method, automatically tries to acquire lock
+        &&& Releases lock on return (even if exception)
+    \end{easylist}
+
+\subsection{Synchronized Statements}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Create synchronized code by specifying object that provides the intrinsic lock
+        && Fine-grained concurrency 
+        & Reentrant synchronization
+        && Synchronized code may call a method which also contained synchronized code, where both sets of code use the same lock
+        && Synchronized blocks in java are reentrant; therefore, a thread may enter other synchronized blocks on same ock
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Monitors}
+\subsection{Monitors}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Synchronization construct
+        && Has both mutex and condition variables
+        && Thread-safe class that uses mutual exclusion to safely allow access to a method/variable by more than one thread
+        && By using multiple condition variables, can allow threads to wait on certain condition
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Measuring Operating Systems Performance}
+\subsection{Metrics}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Metrics should be numerical and relevant to your goals
+        & Need to be practically measurable and measurable in ways which don't affect the measured value
+    \end{easylist}
+
+\subsection{Complexity and the Role of Statistics in Measurement}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Statistics
+        && Need to measure many times usually should report median, mean, range, standard deviation
+        & Think first, measure second
+        && There are many options in software, should not measure possibility, because combinatorial explosion
+        && Measure things that are necessary and measure enough to be confident
+        && Some things are hard to account for, like hardware caching, so metrics will vary across multiple runs
+    \end{easylist}
+
+\subsection{Workloads}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Workloads
+        && Traces, live workloads, standard benchmarks, simulated workloads
+        && Traces are good because realistic and but not easy to reconfigure system; also privacy is a concern
+        && Live workloads are good because realistic and can capture a range of behavior, but not easy to control behavior
+        && Standard benchmarks are good because easy integrate, easy comparison, are scalable and bugfree, but may be limited in testing
+        && Simulated workloads are good for ease of varying models and flexibility in scaling, but only as useful as the quality of tests
+    \end{easylist}
+
+\subsection{Common Mistakes in Performance Measurements}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Measure things realistic and pertinent to real-world behavior
+        & Measure latency with regard to utilization (fully loaded system)
+        & Report variability of measurements with distribution type (bimodal, modal, uniform, etc)
+        & Do not ignore special cases
+        && Do not ignore startup effects (caching is significant)
+        && These sort of things may or may not be relevant to what you are trying to measure
+        & Do not ignore effect of measurement program on measurements
+        & Don't toss any data + label each case well
+        & Use the numbers to attain wisdom; remember the goal
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L10: Load and Stress Testing}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Functional Validation
+        && Establish conditions, perform operations, confirm assertions
+        & Load and Stress Testing
+        && Run a set of tests many times, may not even care about return values, just care that it runs
+    \end{easylist}
+
+\subsection{Load Testing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Performance Metrics
+        && Response time, throughput, CPU time/utilization, disk I/O utilization, network packet utilization
+        & Load Generators
+        && Generate test traffic at calibrated rate on the whole system
+        && Test load for request rate, mix, and particular request patterns
+        & Performance assessment
+        && Deliver at specified rate and measure response time
+        && Deliver requests at increasing rate until max throughput
+        && Deliver requests and use this as background for performance of other system services
+        && Deliver requests at a rate and use this as a test 
+        & Accelerated Aging
+        && Simulate high rate of traffic to accelerate aging 
+    \end{easylist}
+
+\subsection{Stress Testing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Use randomly generated complex usage scenarios to increase likelihood of unlikely events
+        & Generate large number of conflicting requests
+        & Introduce wide range of errors
+        & Introduce wide changes in load
+        & Perform once-a-year type situations hundreds of times per minute
+        & Few products survive, but necessary for mission-critical programs
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L11: Health Monitoring and Recovery}
+\subsection{f}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
