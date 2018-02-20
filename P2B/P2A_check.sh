@@ -1,29 +1,30 @@
 #!/bin/bash
 #
-# sanity check script for Project 2B
+# sanity check script for Project 2A
 #	extract tar file
 #	required README fields (ID, EMAIL, NAME)
 #	required Makefile targets (clean, dist, graphs, tests)
 #	make default
 #	make dist
 #	make clean (returns directory to untared state)
-#	make default, success, creates program
+#	make default, success, creates client/server
+#	add recognizes standard parameters, produces plausible output
 #	list recognizes standard parameters, produces plausible output
 #	use of expected functions
 #
-LAB="lab2b"
+LAB="lab2a"
 README="README"
 MAKEFILE="Makefile"
 
-SOURCES="lab2_list.c SortedList.c SortedList.h"
-DATA="lab2b_list.csv"
-GRAPHS="lab2b_1.png lab2b_2.png lab2b_3.png lab2b_4.png lab2b_5.png"
-PROFILE="profile.out"
+SOURCES="lab2_add.c lab2_list.c SortedList.c SortedList.h"
+DATA="lab2_add.csv lab2_list.csv"
+GRAPHS="lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png"
 
-EXPECTED="$SOURCES $DATA $GRAPHS $PROFILE"
-EXPECTEDS=""
-PGM="lab2_list"
-PGMS=$PGM
+EXPECTED="$SOURCES $DATA $GRAPHS"
+
+ADD_PGM=./lab2_add
+LIST_PGM=./lab2_list
+PGMS="$ADD_PGM $LIST_PGM"
 
 SUFFIXES=""
 
@@ -115,8 +116,6 @@ checkTarget tests
 let errors+=$?
 checkTarget graphs
 let errors+=$?
-checkTarget profile
-let errors+=$?
 checkTarget dist
 let errors+=$?
 
@@ -134,8 +133,8 @@ let errors+=$?
 noOutput STDERR
 let errors+=$?
 
-echo "... deleting programs and data to force rebuild"
-rm -f $PGMS $DATA
+echo "... deleting all data and graphs to force rebuild"
+rm -f $PGMS $DATA $GRAPHS
 
 echo "... checking make dist"
 make dist 2> STDERR
@@ -186,11 +185,62 @@ do
 	fi
 done
 
+
+# sanity test on basic output
+#	--threads=
+#	--iterations=
+#	--sync=
+#	--yield
+#
+iterations=2
+threads=1
+opsper=2
+for s in m c s
+do
+	echo "... testing $ADD_PGM --iterations=$iterations --threads=$threads --yield --sync=$s"
+	$ADD_PGM --iterations=$iterations --threads=$threads --yield --sync=$s > STDOUT
+
+	# check return code
+	testRC $? 0
+	let errors+=$?
+
+	record=`cat STDOUT`
+
+	# check number of fields
+	numFields "$record" 7
+	let errors+=$?
+
+	fieldValue "$record" "output tag" 1 "add-yield-$s"
+	let errors+=$?
+
+	fieldValue "$record" "threads" 2 "$threads"
+	let errors+=$?
+
+	fieldValue "$record" "iterations" 3 "$iterations"
+	let errors+=$?
+
+	fieldValue "$record" "operations" 4 "$((threads*iterations*opsper))"
+	let errors+=$?
+
+	# check field 5 = total time per run
+	fieldRange "$record" "time/run" 5 2 10000000
+	let errors+=$?
+
+	# check field 6 = time per operation
+	t=`echo $record | cut -d, -f5`
+	let avg=$((t/(threads*iterations*opsper)))
+	fieldRange "$record" "time/op" 6 $((avg-1)) $((avg+1))
+	let errors+=$?
+
+	# check field 7 = sum
+	fieldValue "$record" "sum" 7 0
+	let errors+=$?
+done
+
 # sanity test on basic output
 #	--threads=
 #	--iterations=
 #	--yield=
-#	--lists=
 #	--sync=
 #
 # (a) are the parameters recognized, and do they seem to have effect
@@ -199,19 +249,19 @@ done
 #
 threads=1
 iterations=2
-lists=2
+lists=1
 yield="idl"
 opsper=3
 for s in m s
 do
-	echo "... testing $PGM --iterations=$iterations --threads=$threads --yield=$yield --sync=$s"
-	./$PGM --iterations=$iterations --threads=$threads --yield=$yield --sync=$s  --lists=$lists> STDOUT
+	echo "... testing $LIST_PGM --iterations=$iterations --threads=$threads --yield=$yield --sync=$s"
+	$LIST_PGM --iterations=$iterations --threads=$threads --yield=$yield --sync=$s > STDOUT
 	testRC $? 0
 	let errors+=$?
 	record=`cat STDOUT`
 
-	# check number of fields (8)
-	numFields "$record" 8
+	# check number of fields (2A: 7, 2B: 8)
+	numFields "$record" 7 8
 	let errors+=$?
 
 	fieldValue "$record" "output tag" 1 "list-$yield-$s"
@@ -238,38 +288,10 @@ do
 	let avg=$((t/(threads*iterations*opsper)))
 	fieldRange "$record" "time/op" 7 $((avg-1)) $((avg+1))
 	let errors+=$?
-
-	# check field 8 = wait time
-	fieldRange "$record" "lock-wait" 8 0 $avg
-	let errors+=$?
-done
-
-#
-# look for evidence that lists were correctly implemented
-#
-threads=10
-iterations=1000
-for s in m s
-do
-	echo>STDOUT
-	for lists in 1 10
-	do
-		echo "... testing $PGM --iterations=$iterations --threads=$threads --lists=$lists --sync=$s"
-		./$PGM --iterations=$iterations --threads=$threads --lists=$lists --sync=$s >> STDOUT
-	done
-	t1=`grep ",$threads,$iterations,1," STDOUT | cut -d, -f7`
-	t10=`grep ",$threads,$iterations,10," STDOUT | cut -d, -f7`
-	let r=t1/t10
-	if [ $r -gt 5 ]; then
-		echo "        T(l=1)/T(l=10) ... OK ($t1/$t10 ns/op)"
-	else
-		echo "        T(l=1)/T(l=10) ... LITTLE BENEFIT ($t1/$t10 ns/op)"
-		let errors+=1
-	fi
 done
 
 echo "... usage of expected library functions"
-for r in sched_yield pthread_mutex_lock pthread_mutex_unlock __sync_lock_test_and_set __sync_lock_release
+for r in sched_yield pthread_mutex_lock pthread_mutex_unlock __sync_val_compare_and_swap __sync_lock_test_and_set __sync_lock_release
 do
 	grep $r *.c > /dev/null
 	if [ $? -ne 0 ] 
