@@ -1,0 +1,289 @@
+Total: 329 samples
+     264  80.2%  80.2%      329 100.0% insert_length_delete
+      35  10.6%  90.9%       35  10.6% SortedList_insert
+      27   8.2%  99.1%       27   8.2% SortedList_lookup
+       1   0.3%  99.4%        1   0.3% 0x00007ffcf8d996a2
+       1   0.3%  99.7%        1   0.3% 0x00007ffcf8d9983d
+       1   0.3% 100.0%        1   0.3% calculate_elapsed_ns
+       0   0.0% 100.0%        2   0.6% __GI___clock_gettime
+       0   0.0% 100.0%      329 100.0% __clone
+       0   0.0% 100.0%       27   8.2% delete
+       0   0.0% 100.0%        2   0.6% get_time
+       0   0.0% 100.0%       35  10.6% insert
+       0   0.0% 100.0%      329 100.0% start_thread
+ROUTINE ====================== insert_length_delete in /u/cs/ugrad/quentin/Desktop/P2B/lab2_list.c
+   264    329 Total samples (flat / cumulative)
+     .      .  259:         fprintf(stderr, "Error: corrupted list\n");
+     .      .  260:         exit(2);
+     .      .  261:     }
+     .      .  262: }
+     .      .  263: 
+---
+     .      .  264: void* insert_length_delete(void* thread_num){
+     .      .  265:     long long start_pos = *((long long*) thread_num) * n_iterations;
+     .      .  266:     struct timespec start_time;
+     .      .  267:     struct timespec end_time;
+     .      .  268:     long long elapsed_time_ns;
+     .      .  269: 
+     .      .  270:     // Insert
+     .      .  271:     for (long long i = start_pos; i < start_pos + n_iterations; i++){        
+     .      .  272:         int sublist_num = simple_hash((list_elements + i)->key) % n_lists; // index choosing sublist from list_heads  
+     .      .  273: 
+     .      .  274:         switch(lock_version){
+     .      .  275:             case NO_LOCK:
+     .      .  276:                 insert(i, sublist_num);
+     .      .  277:                 break;
+     .      .  278:             case MUTEX:
+     .      .  279:                 // Record start time and try lock
+     .      .  280:                 get_time(&start_time);
+     .      .  281:                 pthread_mutex_lock(list_mutexes + sublist_num);
+     .      .  282: 
+     .      .  283:                 // Record end time and calculate elapsed time
+     .      .  284:                 get_time(&end_time);
+     .      .  285:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  286:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  287: 
+     .      .  288:                 insert(i, sublist_num);
+     .      .  289:                 pthread_mutex_unlock(list_mutexes + sublist_num);
+     .      .  290:                 break;
+     .      .  291:             case SPIN_LOCK:
+     .      .  292:                 // Record start time and try lock
+     .      1  293:                 get_time(&start_time);
+   118    118  294:                 while(__sync_lock_test_and_set(list_spin_lock + sublist_num, 1));
+     .      .  295: 
+     .      .  296:                 // Record end time and calculate elapsed time
+     .      .  297:                 get_time(&end_time);
+     .      1  298:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  299:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  300: 
+     .     35  301:                 insert(i, sublist_num);
+     .      .  302:                 __sync_lock_release(list_spin_lock + sublist_num);
+     .      .  303:                 break;
+     .      .  304:             default:
+     .      .  305:                 break;
+     .      .  306:         }
+     .      .  307:     }
+     .      .  308: 
+     .      .  309:     // Length
+     .      .  310:     // Record start time and try lock
+     .      .  311:     get_time(&start_time);
+     .      .  312:     for (long long i = 0; i < n_lists; i++){
+     .      .  313:         switch(lock_version){
+     .      .  314:             case NO_LOCK:
+     .      .  315:                 break;
+     .      .  316:             case MUTEX:
+     .      .  317:                 pthread_mutex_lock(list_mutexes + i);
+     .      .  318:                 break;
+     .      .  319:             case SPIN_LOCK:
+     .      .  320:                 while(__sync_lock_test_and_set(list_spin_lock + i, 1));
+     .      .  321:                 break;
+     .      .  322:             default:
+     .      .  323:                 break;
+     .      .  324:         }
+     .      .  325:     }
+     .      .  326:     // Record end time and calculate elapsed time
+     .      .  327:     get_time(&end_time);
+     .      .  328:     elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  329:     thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  330: 
+     .      .  331:     for (long long i = 0; i < n_lists; i++)
+     .      .  332:         length(i);
+     .      .  333:     for (long long i = 0; i < n_lists; i++){
+     .      .  334:         switch(lock_version){
+     .      .  335:             case NO_LOCK:
+     .      .  336:                 break;
+     .      .  337:             case MUTEX:
+     .      .  338:                 pthread_mutex_unlock(list_mutexes + i);
+     .      .  339:                 break;
+     .      .  340:             case SPIN_LOCK:
+     .      .  341:                 __sync_lock_release(list_spin_lock + i);
+     .      .  342:                 break;
+     .      .  343:             default:
+     .      .  344:                 break;
+     .      .  345:         }
+     .      .  346:     }
+     .      .  347: 
+     .      .  348:     // Delete
+     .      .  349:     for (long long i = start_pos; i < start_pos + n_iterations; i++){        
+     .      .  350:         int sublist_num = simple_hash((list_elements + i)->key) % n_lists; // index choosing sublist from list_heads  
+     .      .  351: 
+     .      .  352:         switch(lock_version){
+     .      .  353:             case NO_LOCK:
+     .      .  354:                 delete(i, sublist_num);
+     .      .  355:                 break;
+     .      .  356:             case MUTEX:
+     .      .  357:                 // Record start time and try lock
+     .      .  358:                 get_time(&start_time);
+     .      .  359:                 pthread_mutex_lock(list_mutexes + sublist_num);
+     .      .  360: 
+     .      .  361:                 // Record end time and calculate elapsed time
+     .      .  362:                 get_time(&end_time);
+     .      .  363:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  364:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  365: 
+     .      .  366:                 delete(i, sublist_num);
+     .      .  367:                 pthread_mutex_unlock(list_mutexes + sublist_num);
+     .      .  368:                 break;
+     .      .  369:             case SPIN_LOCK:
+     .      .  370:                 // Record start time and try lock
+     .      1  371:                 get_time(&start_time);
+   145    145  372:                 while(__sync_lock_test_and_set(list_spin_lock + sublist_num, 1));
+     .      .  373: 
+     .      .  374:                 // Record end time and calculate elapsed time
+     .      .  375:                 get_time(&end_time);
+     .      .  376:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  377:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  378: 
+     .     27  379:                 delete(i, sublist_num);
+     .      .  380:                 __sync_lock_release(list_spin_lock + sublist_num);
+     1      1  381:                 break;
+     .      .  382:             default:
+     .      .  383:                 break;
+     .      .  384:         }
+     .      .  385:     }
+     .      .  386:     return NULL;
+     .      .  387: }
+---
+     .      .  388: 
+     .      .  389: void sig_handler(int signum) {
+     .      .  390:     if (signum == SIGSEGV) {
+     .      .  391:         fprintf(stderr, "Error: Segmentation Fault\n");
+     .      .  392:         exit(2);
+ROUTINE ====================== insert_length_delete in /u/cs/ugrad/quentin/Desktop/P2B/lab2_list.c
+   264    329 Total samples (flat / cumulative)
+     .      .  259:         fprintf(stderr, "Error: corrupted list\n");
+     .      .  260:         exit(2);
+     .      .  261:     }
+     .      .  262: }
+     .      .  263: 
+---
+     .      .  264: void* insert_length_delete(void* thread_num){
+     .      .  265:     long long start_pos = *((long long*) thread_num) * n_iterations;
+     .      .  266:     struct timespec start_time;
+     .      .  267:     struct timespec end_time;
+     .      .  268:     long long elapsed_time_ns;
+     .      .  269: 
+     .      .  270:     // Insert
+     .      .  271:     for (long long i = start_pos; i < start_pos + n_iterations; i++){        
+     .      .  272:         int sublist_num = simple_hash((list_elements + i)->key) % n_lists; // index choosing sublist from list_heads  
+     .      .  273: 
+     .      .  274:         switch(lock_version){
+     .      .  275:             case NO_LOCK:
+     .      .  276:                 insert(i, sublist_num);
+     .      .  277:                 break;
+     .      .  278:             case MUTEX:
+     .      .  279:                 // Record start time and try lock
+     .      .  280:                 get_time(&start_time);
+     .      .  281:                 pthread_mutex_lock(list_mutexes + sublist_num);
+     .      .  282: 
+     .      .  283:                 // Record end time and calculate elapsed time
+     .      .  284:                 get_time(&end_time);
+     .      .  285:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  286:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  287: 
+     .      .  288:                 insert(i, sublist_num);
+     .      .  289:                 pthread_mutex_unlock(list_mutexes + sublist_num);
+     .      .  290:                 break;
+     .      .  291:             case SPIN_LOCK:
+     .      .  292:                 // Record start time and try lock
+     .      1  293:                 get_time(&start_time);
+   118    118  294:                 while(__sync_lock_test_and_set(list_spin_lock + sublist_num, 1));
+     .      .  295: 
+     .      .  296:                 // Record end time and calculate elapsed time
+     .      .  297:                 get_time(&end_time);
+     .      1  298:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  299:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  300: 
+     .     35  301:                 insert(i, sublist_num);
+     .      .  302:                 __sync_lock_release(list_spin_lock + sublist_num);
+     .      .  303:                 break;
+     .      .  304:             default:
+     .      .  305:                 break;
+     .      .  306:         }
+     .      .  307:     }
+     .      .  308: 
+     .      .  309:     // Length
+     .      .  310:     // Record start time and try lock
+     .      .  311:     get_time(&start_time);
+     .      .  312:     for (long long i = 0; i < n_lists; i++){
+     .      .  313:         switch(lock_version){
+     .      .  314:             case NO_LOCK:
+     .      .  315:                 break;
+     .      .  316:             case MUTEX:
+     .      .  317:                 pthread_mutex_lock(list_mutexes + i);
+     .      .  318:                 break;
+     .      .  319:             case SPIN_LOCK:
+     .      .  320:                 while(__sync_lock_test_and_set(list_spin_lock + i, 1));
+     .      .  321:                 break;
+     .      .  322:             default:
+     .      .  323:                 break;
+     .      .  324:         }
+     .      .  325:     }
+     .      .  326:     // Record end time and calculate elapsed time
+     .      .  327:     get_time(&end_time);
+     .      .  328:     elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  329:     thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  330: 
+     .      .  331:     for (long long i = 0; i < n_lists; i++)
+     .      .  332:         length(i);
+     .      .  333:     for (long long i = 0; i < n_lists; i++){
+     .      .  334:         switch(lock_version){
+     .      .  335:             case NO_LOCK:
+     .      .  336:                 break;
+     .      .  337:             case MUTEX:
+     .      .  338:                 pthread_mutex_unlock(list_mutexes + i);
+     .      .  339:                 break;
+     .      .  340:             case SPIN_LOCK:
+     .      .  341:                 __sync_lock_release(list_spin_lock + i);
+     .      .  342:                 break;
+     .      .  343:             default:
+     .      .  344:                 break;
+     .      .  345:         }
+     .      .  346:     }
+     .      .  347: 
+     .      .  348:     // Delete
+     .      .  349:     for (long long i = start_pos; i < start_pos + n_iterations; i++){        
+     .      .  350:         int sublist_num = simple_hash((list_elements + i)->key) % n_lists; // index choosing sublist from list_heads  
+     .      .  351: 
+     .      .  352:         switch(lock_version){
+     .      .  353:             case NO_LOCK:
+     .      .  354:                 delete(i, sublist_num);
+     .      .  355:                 break;
+     .      .  356:             case MUTEX:
+     .      .  357:                 // Record start time and try lock
+     .      .  358:                 get_time(&start_time);
+     .      .  359:                 pthread_mutex_lock(list_mutexes + sublist_num);
+     .      .  360: 
+     .      .  361:                 // Record end time and calculate elapsed time
+     .      .  362:                 get_time(&end_time);
+     .      .  363:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  364:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  365: 
+     .      .  366:                 delete(i, sublist_num);
+     .      .  367:                 pthread_mutex_unlock(list_mutexes + sublist_num);
+     .      .  368:                 break;
+     .      .  369:             case SPIN_LOCK:
+     .      .  370:                 // Record start time and try lock
+     .      1  371:                 get_time(&start_time);
+   145    145  372:                 while(__sync_lock_test_and_set(list_spin_lock + sublist_num, 1));
+     .      .  373: 
+     .      .  374:                 // Record end time and calculate elapsed time
+     .      .  375:                 get_time(&end_time);
+     .      .  376:                 elapsed_time_ns = calculate_elapsed_ns(&start_time, &end_time);
+     .      .  377:                 thread_lock_wait_time[*(int*) thread_num] += elapsed_time_ns;
+     .      .  378: 
+     .     27  379:                 delete(i, sublist_num);
+     .      .  380:                 __sync_lock_release(list_spin_lock + sublist_num);
+     1      1  381:                 break;
+     .      .  382:             default:
+     .      .  383:                 break;
+     .      .  384:         }
+     .      .  385:     }
+     .      .  386:     return NULL;
+     .      .  387: }
+---
+     .      .  388: 
+     .      .  389: void sig_handler(int signum) {
+     .      .  390:     if (signum == SIGSEGV) {
+     .      .  391:         fprintf(stderr, "Error: Segmentation Fault\n");
+     .      .  392:         exit(2);

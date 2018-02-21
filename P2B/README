@@ -31,18 +31,17 @@ B. Why do you believe these to be the most expensive parts of the code?
 C. Where do you believe most of the time/cycles are being spent in the high-thread spin-lock tests?
 D. Where do you believe most of the time/cycles are being spent in the high-thread mutex tests?
 ANSWER 2.3.1
-A.
-B.
-C.
-D.
+A. I believe most cycles in the 1-thread list test with no synchronization, mutex, and spin-lock are being spent on the list operations. If we have more than 1 core, then most cycles for the 2-thread list test with no synchronization, mutex, and spin-lock are being spent on list operations. If we only have 1 core, then for the 2-thread list test for spin-lock, many cycles will be spent spinning; for the mutex, some cycles will be spent, but not too many, because the thread is just blocked.
+B. These are the most expensive parts of the code because there are few threads, and most machines have more than 1 or 2 cores, so the threads don't actually waste cycles blocking/spinning.
+C. I believe most cycles in the high-thread (more threads than cores) (and many iterations) spin-lock tests are spent spinning because there is lock contention.
+D. I believe most cycles in the high-thread (more threads than cores) (and many iterations) mutex tests are spent on list operations because threads who cannot acquire the lock are simply blocked and not running.
 ---
 QUESTION 2.3.2 - Execution Profiling:
 A. Where (what lines of code) are consuming most of the cycles when the spin-lock version of the list exerciser is run with a large number of threads?
 B. Why does this operation become so expensive with large numbers of threads?
 ANSWER 2.3.2
-A.
-B.
-C.
+A. "while(__sync_lock_test_and_set(list_spin_lock + sublist_num, 1));" consumes most of the cycles when the spin-lock version of the list exerciser is run with a large number of threads.
+B. This operation becomes expensive with a large number of threads because a large number of threads are competing for the spin-lock; thus, they are all spinning instead of making useful progress.
 ---
 QUESTION 2.3.3 - Mutex Wait Time:
 Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
@@ -50,22 +49,16 @@ A. Why does the average lock-wait time rise so dramatically with the number of c
 B. Why does the completion time per operation rise (less dramatically) with the number of contending threads?
 C. How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
 ANSWER 2.3.3
-A.
-B.
-C.
+A. The average lock-wait time rises dramatically with the number of contending threads because each waiting thread contributes to the total wait time. Moreover, for every additional thread that is waiting, even more time is spent waiting, because that thread also needs to run. Thus, the average lock-wait time will increase rapidly once many threads are waiting. 
+B. The completion time per operation rises less dramatically with the number of contending threads because of hardware caching effects. The many different threads cannot utilize the caches as well when there are many threads, because the cache gets filled. Also, the many threads spend more time performing mutex operations, which takes some time.
+C. Each thread which cannot enter the critical section is waiting and adding to the total (this would be a CPU time metric) - if there are two threads each waiting for one second, two seconds will be added. This wait-time growth is much greater than the completion time growth. The completion time growth is a wall time metric, measuring the time from start to finish only once; thus, it does not grow as rapidly as wait-time.
 ---
 QUESTION 2.3.4 - Performance of Partitioned Lists
 A. Explain the change in performance of the synchronized methods as a function of the number of lists.
 B. Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
 C. It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
 ANSWER 2.3.4
-A.
-B.
-C.
+A. Throughput generally improves as the number of sublist increase because there is less contention for locks and shorter lists. Less contention for locks reduces the amount of time wasted. Shorter lists enables shorter traversals. These two factors lead to improved throughput.
+B. Throughput will eventually stop improving as a function of the number of sublists because some lists will be empty or already short enough; thus, there is no time-savings and no improved throughput.
+C. This is not evident in the curves. It is not evident because the number of threads contribute to lock contention and the number of sublists contribute to sublist length. The more threads there are, the more lock contention will occur. The more sublists there are, the shorter the sublists will be.
 ---
-
-
-
-
-
-

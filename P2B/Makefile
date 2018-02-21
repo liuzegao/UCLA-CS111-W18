@@ -7,14 +7,14 @@
 CC = gcc
 FLAGS = -Wall -Wextra
 
-build:
+default:
 	$(CC) -o lab2_list $(FLAGS) -pthread -g -lprofiler SortedList.c lab2_list.c
 
-tests: build
+tests: default
 	chmod u+x generate_data.sh
 	./generate_data.sh
 
-profile: build
+profile: default
 	rm -f ./raw.gperf
 	CPUPROFILE=./raw.gperf ./lab2_list --threads=12 --iterations=1000 --sync=s 
 	pprof --text ./lab2_list ./raw.gperf > profile.gperf > profile.out
