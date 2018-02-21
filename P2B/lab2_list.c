@@ -198,7 +198,7 @@ void init_list(){
         list_spin_lock[i] = 0;
 
     // Malloc and initialize all per-thread total time to obtain lock
-    thread_lock_wait_time = malloc(sizeof(long long)* n_threads);
+    thread_lock_wait_time = malloc(sizeof(long long) * n_threads);
     if (thread_lock_wait_time == NULL){
         fprintf(stderr, "Error: malloc failed\n%s\n", strerror(errno));
         exit(1);

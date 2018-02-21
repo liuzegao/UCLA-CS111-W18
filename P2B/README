@@ -25,3 +25,47 @@ ID: 404782322
     - descriptions of each of the included files and any other information about your submission that you would like to bring to our attention (e.g. research, limitations, features, testing methodology).
     - brief (a few sentences per question) answers to each of the questions (below).
 ---
+QUESTION 2.3.1 - Cycles in the basic list implementation:
+A. Where do you believe most of the cycles are spent in the 1 and 2-thread list tests ?
+B. Why do you believe these to be the most expensive parts of the code?
+C. Where do you believe most of the time/cycles are being spent in the high-thread spin-lock tests?
+D. Where do you believe most of the time/cycles are being spent in the high-thread mutex tests?
+ANSWER 2.3.1
+A.
+B.
+C.
+D.
+---
+QUESTION 2.3.2 - Execution Profiling:
+A. Where (what lines of code) are consuming most of the cycles when the spin-lock version of the list exerciser is run with a large number of threads?
+B. Why does this operation become so expensive with large numbers of threads?
+ANSWER 2.3.2
+A.
+B.
+C.
+---
+QUESTION 2.3.3 - Mutex Wait Time:
+Look at the average time per operation (vs. # threads) and the average wait-for-mutex time (vs. #threads).
+A. Why does the average lock-wait time rise so dramatically with the number of contending threads?
+B. Why does the completion time per operation rise (less dramatically) with the number of contending threads?
+C. How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+ANSWER 2.3.3
+A.
+B.
+C.
+---
+QUESTION 2.3.4 - Performance of Partitioned Lists
+A. Explain the change in performance of the synchronized methods as a function of the number of lists.
+B. Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
+C. It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
+ANSWER 2.3.4
+A.
+B.
+C.
+---
+
+
+
+
+
+
