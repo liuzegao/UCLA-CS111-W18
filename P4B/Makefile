@@ -12,9 +12,7 @@ default:
 	$(CC) -o lab4b $(FLAGS) -lmraa -lm lab4b.c
 
 check: default
-	./lab4b --bad > /dev/null; 
-	if [ $? = 1 ]; then echo "Success bad_arg"; fi
-
+	{ echo "START"; echo "PERIOD=2"; echo "SCALE=C"; sleep 3; echo "STOP"; sleep 1; echo "OFF"; } | ./lab4b --log=LOGFILE --period=1 --scale=F
 
 clean:
 	rm -f lab4b lab4b-404782322.tar.gz 

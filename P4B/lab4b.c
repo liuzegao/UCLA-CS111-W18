@@ -25,12 +25,12 @@ int period = 1;
 char scale = 'F';
 int log_fd = -1;
 
-mraa_aio_context temp_sensor;
-mraa_gpio_context button;
-
 int shutdown = 0; // 
 int enabled = 1; // 0 = disabled; 1 = enabled
 int verbose;
+
+mraa_aio_context temp_sensor;
+mraa_gpio_context button;
 
 
 // Get-opt Long Options parsing
@@ -50,7 +50,7 @@ void process_args(int argc, char **argv){
                 break;
             case 'p':
                 period = atoi(optarg);
-                if (period == 0){
+                if (period <= 0){
                     fprintf(stderr, "Error: invalid period time\n");
                     exit(1);
                 }
@@ -68,7 +68,7 @@ void process_args(int argc, char **argv){
                 break;
             case 'l':
                 log_fd = creat(optarg, 0666);
-                if (log_fd < 0) {
+                if (log_fd <= 0) {
                     fprintf(stderr, "Error: creat failed\n");
                     exit(1);
                 }
@@ -80,6 +80,7 @@ void process_args(int argc, char **argv){
     }
 }
 
+// Read temperature from sensor and convert to C or F
 float read_temp(){
     int reading = mraa_aio_read(temp_sensor);
 
@@ -122,11 +123,14 @@ void sample(){
         // Sample button
         if (mraa_gpio_read(button)){
             write_report("SHUTDOWN");
-            exit(1);
+            exit(0);
         }
 
+        // Wait for # period seconds
+        sleep(period);
+
         // Poll stdin for commands
-        int nrevents = poll(fds, 1, period * 1000);
+        int nrevents = poll(fds, 1, 0);
         if (nrevents == 0){
             continue;
         }
@@ -135,60 +139,73 @@ void sample(){
             exit(1);
         }
         else if (fds[0].revents & POLLIN){
-            char buffer[256] = {0};
-            read(fds[0].fd, buffer, 256);
+            char buffer[1024] = {0};
+            read(fds[0].fd, buffer, 1024);
+            char *token = strtok(buffer, "\n");
 
-            if (!strncmp(buffer, "SCALE=F", 7)){
-                if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-                scale = 'F';
-            }
-            else if (!strncmp(buffer, "SCALE=C", 7)){
-                if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-                scale = 'C';
-            }
-            else if (!strncmp(buffer, "PERIOD=", 7)){
-                if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-                period = atoi(buffer + 7);
-                if (period == 0){
-                    fprintf(stderr, "Error: invalid period time\n");
+            while(token) {
+                if (!strncmp(token, "SCALE=F", 7)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+
+                    scale = 'F';
+                }
+                else if (!strncmp(token, "SCALE=C", 7)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+                    
+                    scale = 'C';
+                }
+                else if (!strncmp(token, "PERIOD=", 7)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+
+                    period = atoi(token + 7);
+                    if (period <= 0){
+                        fprintf(stderr, "Error: invalid period time\n");
+                        exit(1);
+                    }
+                }
+                else if (!strncmp(token, "STOP", 4)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+
+                    enabled = 0;
+                }
+                else if (!strncmp(token, "START", 5)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+
+                    enabled = 1;
+                }
+                else if (!strncmp(token, "LOG", 3)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+                }
+                else if (!strncmp(token, "OFF", 3)){
+                    if (log_fd != -1)
+                        write(log_fd, token, strlen(token));
+                        
+                    write_report("SHUTDOWN");
+                    exit(0);
+                }
+                else{
+                    fprintf(stderr, "Error: invalid command: %s\n", token);
                     exit(1);
                 }
-            }
-            else if (!strncmp(buffer, "STOP", 4)){
                 if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-                enabled = 0;
-            }
-            else if (!strncmp(buffer, "START", 5)){
-                if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-                enabled = 1;
-            }
-            else if (!strncmp(buffer, "LOG", 3)){
-                if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-            }
-            else if (!strncmp(buffer, "OFF", 3)){
-                if (log_fd != -1)
-                    write(log_fd, buffer, strlen(buffer));
-                write_report("SHUTDOWN");
-                exit(1);
-            }
-            else{
-                fprintf(stderr, "Error: invalid command\n");
-                exit(1);
+                    write(log_fd, "\n", 1);
+                token = strtok(NULL, "\n");
             }
         }
     }
 }
 
+// Exit handler
 void atexit_handler(){
     mraa_gpio_close(button);
     mraa_aio_close(temp_sensor);
-    //free shit
+    close(log_fd);
 }
 
 int main(int argc, char **argv){
