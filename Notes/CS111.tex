@@ -1682,10 +1682,11 @@
         & Don't toss any data + label each case well
         & Use the numbers to attain wisdom; remember the goal
     \end{easylist}
+\clearpage
 %========================================================
 
 %========================================================
-\section{L10: Load and Stress Testing}
+\section{L11: Load and Stress Testing}
 \subsection{Introduction}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
@@ -1726,7 +1727,66 @@
 %========================================================
 
 %========================================================
-\section{L11: Health Monitoring and Recovery}
+\section{L12: Arpaci-Dusseau Chapter 33-33.6: Event-based Concurrency (Advanced)}
+\subsection{The Basic Idea: An Event Loop}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Event-based concurrency
+        && Wait for event to occur, then when it occurs, check what event it is and do its work
+        && Addresses issue that managing thread-based concurrency is difficult because of locks and deadlocks
+        && Addresses issue of lack of control over scheduling
+        & Event loop
+        && Process events with event handler
+        && Deciding which event to handle next is equivalent to scheduling
+        & select() or poll()
+        && Allow server to know if new packet has arrived and when it's OK to reply
+        && Timeout argument allows you to decide how long to block
+        & Asynchronous vs Synchronous
+        && Non-blocking vs blocking
+    \end{easylist}
+
+\subsection{A Problem: Blocking System Calls}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Simpler because no locks
+        && Has no locks because single threaded
+        & No blocking calls are allowed
+        && Because only one thread, so if event loop blocks, entire system blocks
+    \end{easylist}
+
+\subsection{A Solution: Asynchronous I/O}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & AIO Control Block
+        && Enables asynchronous IO
+        & Async IO
+        && Issue call, return immediately if successful
+        && Periodically poll to check if IO complete
+        && Or use interrupts (Unix signals)
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: Arpaci-Dusseau, Chapter 35: A Dialogue on Persistence}
+\subsection{Dialogue}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Persistence is relevant
+        && Hard to make data persist despite power outages, disk failures, computer crashes
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: Device Drivers: Classes and Services}
+\subsection{f}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & 
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: A Dialogue on Persistence}
 \subsection{f}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)

@@ -174,9 +174,17 @@
 \contentsline {subsection}{\numberline {36.2}Complexity and the Role of Statistics in Measurement}{30}
 \contentsline {subsection}{\numberline {36.3}Workloads}{30}
 \contentsline {subsection}{\numberline {36.4}Common Mistakes in Performance Measurements}{30}
-\contentsline {section}{\numberline {37}L10: Load and Stress Testing}{30}
-\contentsline {subsection}{\numberline {37.1}Introduction}{30}
-\contentsline {subsection}{\numberline {37.2}Load Testing}{30}
+\contentsline {section}{\numberline {37}L11: Load and Stress Testing}{31}
+\contentsline {subsection}{\numberline {37.1}Introduction}{31}
+\contentsline {subsection}{\numberline {37.2}Load Testing}{31}
 \contentsline {subsection}{\numberline {37.3}Stress Testing}{31}
-\contentsline {section}{\numberline {38}L11: Health Monitoring and Recovery}{32}
-\contentsline {subsection}{\numberline {38.1}f}{32}
+\contentsline {section}{\numberline {38}L12: Arpaci-Dusseau Chapter 33-33.6: Event-based Concurrency (Advanced)}{32}
+\contentsline {subsection}{\numberline {38.1}The Basic Idea: An Event Loop}{32}
+\contentsline {subsection}{\numberline {38.2}A Problem: Blocking System Calls}{32}
+\contentsline {subsection}{\numberline {38.3}A Solution: Asynchronous I/O}{32}
+\contentsline {section}{\numberline {39}L12: Arpaci-Dusseau, Chapter 35: A Dialogue on Persistence}{32}
+\contentsline {subsection}{\numberline {39.1}Dialogue}{32}
+\contentsline {section}{\numberline {40}L12: Device Drivers: Classes and Services}{32}
+\contentsline {subsection}{\numberline {40.1}f}{32}
+\contentsline {section}{\numberline {41}L12: A Dialogue on Persistence}{32}
+\contentsline {subsection}{\numberline {41.1}f}{32}
