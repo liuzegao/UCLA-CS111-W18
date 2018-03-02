@@ -1778,10 +1778,207 @@
 
 %========================================================
 \section{L12: Device Drivers: Classes and Services}
-\subsection{f}
+\subsection{Introduction}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & 
+        & Device Drivers
+        && Generalizing Abstractions
+        &&& Few general classes/models/behaviors/interfaces to be implemented by all drivers for a given class
+        && Simplifying Abstractions
+        &&& Implementation of standard class interface which opaquely encapsulates details
+        & Object oriented code reuse in device drivers 
+        && Similar high-level behavior despite underlying device
+        && Minimize cost of developing drivers
+        && Ensure benefits of improvements accrue to old drivers, not just new ones
+        && Derive device driver subclass from major class
+        && Define subclass interfaces 
+        && Create per-device implementations
+    \end{easylist}
+
+\subsection{Major Driver Classes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Block Devices
+        && Random access, addressable in fixed-sized blocks
+        && Request method to enqueue async DMA requests 
+        && Used within OS to access disks
+        & Character Devices
+        && Sequential or byte-addressable
+        && Used directly by applications bc potential for DMA between device and user-space buffer
+        & Even in oldest UNIX, device drivers were divided into distinct classes  (but not mutually exclusive)
+    \end{easylist}
+
+\subsection{Driver sub-classes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Device Driver Interface
+        && Subclass specific interfaces
+        && Identical behavior over many devices
+        && Much important functionality implemented at higher level
+        && Device must conform to interface or will not function w higher level software
+    \end{easylist}
+
+\subsection{Services for Device Drivers}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Nearly impossible to fully implement driver by yourself
+        && Use OS Services like dynamic memory allocation, IO, bus management, condition variables, mutual exclusion, interrupts, DMA, scatter/gather, configuration/registry services, etc
+        & Driver-Kernel Interface
+        && Collection of services exposed by OS available for device driver use
+        && Requirement to maintain stable DKI constrains OS; but if did modify DKI in a noncompatible way, then many drivers would fail
+        & Conclusion
+        && Many drivers demonstrate evolution from basic super-class (character devices) into sub-classes
+        && Each subclass inherits lots of higher level frameworks which do most work
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: Arpaci-Dusseau, Chapter 36: I/O Devices}
+\subsection{System Architecture}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & CPU attached to main memory via memory IO bus
+        & Some devices connected via general IO bus
+        & Slowest devices connected using peripheral IO bus
+    \end{easylist}
+
+\subsection{A Canonical Device}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Hardware interface is presented to rest of system
+        & Internal structure is implementation/device specific
+        & Firmware is software within hardware to implement functionality
+    \end{easylist}
+
+\subsection{The Canonical Protocol}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Device Interface
+        && Status register tells current status
+        && Command register tells device to do command
+        && Data register used to pass data to/from device
+        & Protocol in 4 steps
+        && Device polling, ready for command
+        && OS sends data to data register
+        && OS writes command to device to start doing work
+        && OS waits for device to finish by polling in a loop
+        & Programmed IO
+        && When CPU involved w data movement
+    \end{easylist}
+
+\subsection{Lowering CPU Overhead With Interrupts}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Interrupt service routine / Interrupt handler
+        && CPU will jump to handler if hardware interrupt
+        & Interrupts allow for overlapping routines, instead of constantly just polling, can do real work
+        && There are times where interrupts will be slower, because the task is so short that the first poll will already find the device finished
+        && Hybrid approach between polling and interrupts may be the best
+        && Chance for livelock if using interrupts
+        && Coalescing is when you wait for a bit after receiving interrupt, so that multiple interrupts can be coalesced into a single interrupt delivery
+    \end{easylist}
+
+\subsection{More Efficient Data Movement With DMA}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & DMA
+        && OS tells DMA engine where data is, how much to copy, and where to send it
+        && Then OS is done w transfer and can do other work
+        && DMA engine raises interrupt once transfer is complete
+    \end{easylist}
+
+\subsection{Methods Of Device Interaction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Explicit IO Instructions
+        && Caller specifies register with data in it and port with device name
+        && Execute privileged instruction
+        & Memory Mapped IO
+        && Hardware makes device registers available as memory locations
+        && Load/store to device instead of main memory
+    \end{easylist}
+
+\subsection{Fitting Into The OS: The Device Driver}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Device Driver
+        && Encapsulates specifics of device interactions 
+        && Devices with special capabilities often lose this due to the generic interfaces
+        && Roughly 70 percent of Linux OS code is from device drivers
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: Arpaci-Dusseau, Chapter 37: Hard Disk Drives}
+\subsection{The Interface}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Address space
+        && Is from 0 to n-1 for n sectors
+        & Torn write
+        && Many manufacturers only guarantee 512-byte write as atomic, so larger maybe torn if power loss
+        & Assume sequential access is faster than random access
+    \end{easylist}
+
+\subsection{Basic Geometry}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Platter is circular hard surface where data is stored by inducing magnetic charges
+        & Disk may have multiple platters, each with two surfaces
+        & Platters bound around spindle, spinning around 10000 rotations per minute 
+        & Concentric circle of sectors is a track; hundreds of tracks fit into width of human hair
+        & Disk head does read/write; disk arm positions head over desired track
+    \end{easylist}
+
+\subsection{A Simple Disk Drive}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Rotational Delay
+        && Time for platter to complete half of a full revolution (1/2 R)
+        & Seek time
+        && Acceleration, Coasting, Deacceleration, Settling phases
+        && Then transfer
+        & Track Skew
+        && Skew tracks relative to each other so that sequential reads still get good performance even when switching tracks
+        & Multi-zoned
+        && Outer tracks have more sectors than inner tracks because geometry
+        & Cache/track buffer
+        && Just a cache, maybe all sectors on the track so that disk can quickly respond to sequential requests
+        & Write back vs Write Through
+        && Write back is to memory (faster), write through is to disk (more correct)
+    \end{easylist}
+
+\subsection{I/O Time: Doing The Math}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & IO Time = Seek + Rotation + Transfer
+        && R$_{IO}$ = Size of transfer / IO Time
+        & Average seek is 1/3 the full distance because math
+        & Performance differs between drives, especially if you optimize for diff things
+    \end{easylist}
+
+\subsection{Disk Scheduling}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Shortest Seek Time First (SSTF/SSF)
+        && Pick requests on nearest track to complete first
+        && Has problem that OS does not know geometry
+        && Nearest Block First (NBF)
+        &&& Pick nearest block address first
+        && Also has problem of starvation
+        & Elevator (SCAN/CSCAN)
+        && Move back and forth across disk, servicing requests in order across tracks
+        && FSCAN freezes queue when servicing, so that faraway requests don't starve
+        && CSCAN only sweeps from outer to inner, to add fairness, bc otherwise the middle gets serviced twice
+        & Shortest Positioning Time First (SPTF/SAFT)
+        && Things just depend on speed, just get whatever is fastest to move to
+        & Drive does SPTF scheduling
+        & IO Merging
+        && Merge requests that are near each other, so that you can make fewer overall requests
+        & Work conserving
+        && Issue request to drive immediately
+        & Anticipatory disk scheduling / non-work conserving
+        && Wait a little bit, and see if you can get a better request, thus increasing overall efficiency
     \end{easylist}
 %========================================================
 
