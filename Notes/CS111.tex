@@ -2060,7 +2060,49 @@
 
 %========================================================
 \section{L12: Dynamically Loadable Kernel Modules}
-\subsection{f}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Provide common framework
+        && Fill in for problem-specific implementations later
+        & Device drivers as dynamically loadable modules
+        && Good for device drivers because theres so many of them
+        && After-market addable, delivered by someone other than the OS maker, hot-pluggable
+    \end{easylist}
+
+\subsection{Dynamically Loaded Module}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Choosing Which Module to Load
+        && Today, self-identifying devices; before, had plugin registry or probe system
+        & Loading
+        && If module self contained, then just allocate memory and load
+        && If module needs other functions and unresolved external references, then run-time loader
+        & Run-time loadder
+        && Usually will return vector with pointer to initialization function
+        && Then call this func, allocate memory/IO, init data strucs
+        & Using DLM
+        && OS shows device instance as special file 
+        & Unloading
+        && Unregister, shutdown devices, return allocated memory/IO
+    \end{easylist}
+
+\subsection{Criticality of Stable Interfaces/Hot-Pluggable Devices and Drivers/Summary}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Tension between new hardware/software features and retaining compatability
+        & Hot-plug busses can generate events 
+        && Hot-plug manager subscribes to hot-plug events, loads drivers, removes devices
+        & Stable interfaces are essential bc methods implemented and services provided need to be standardized
+        & Device drivers fall into the category of dynamically loaded modules
+        && Select module to load, dependencies, init, shutdown, binding, defining/managing interfaces are some characteristics
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L13: Arpaci-Dusseau Chapter 39: Interlude: Files and Directories}
+\subsection{Files and Directories}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
@@ -2068,7 +2110,7 @@
 %========================================================
 
 %========================================================
-\section{L12: Arpaci-Dusseau, Chapter 38}
+\section{L13: Arpaci-Dusseau, Chapter 38}
 \subsection{f}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
