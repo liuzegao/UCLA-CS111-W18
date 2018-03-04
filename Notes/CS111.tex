@@ -1983,7 +1983,92 @@
 %========================================================
 
 %========================================================
-\section{L12: A Dialogue on Persistence}
+\section{L12: Arpaci-Dusseau, Chapter 38: Redundant Arrays of Inexpensive Disks}
+\subsection{Interface And RAID Internals}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & RAID
+        && Multiple disks to build faster, bigger, more reliable system
+        && Transparent to OS, appears as a large disk, so easy to deploy
+        & One logical IO may translate to multiple physical IO, depending on type of RAID
+    \end{easylist}
+
+\subsection{How To Evaluate A RAID}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Fail-stop fault model
+        && Disk either is working or has failed; also assume that failure is easy to detect
+        & Three axes
+        && Capacity, Reliable, Performance
+        & Best chunk size depends on workload
+    \end{easylist}
+
+\subsection{RAID Level 0: Striping}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Striping
+        && Spread sequential blocks across disks to parallelize requests for contiguous chunks of the array
+    \end{easylist}
+
+\subsection{RAID Level 1: Mirroring}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Mirroring
+        && Two copies of all data; expensive single-failure solution
+        && RAID Consistent Update Problem
+        &&& If system crashes after write to one disk but not the second
+        &&& So use write-ahead log in memory to record actions
+        && Random reads are good, because can distribute reads across disks
+    \end{easylist}
+
+\subsection{RAID Level 4: Saving Space With Parity}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Parity
+        && Compute XOR of all bits (or block) from a stripe, and put it in another disk
+        && If lose any one disk, can recover
+        & Full-stripe write
+        && Write all blocks on stripe and compute parity at same time
+        & Additive parity
+        && Read all data blocks in stripe and compute parity
+        & Subtractive parity
+        && Flip parity if new bit is different from old bit
+        & Throughput under small random writes is terrible
+    \end{easylist}
+
+\subsection{RAID Level 5: Rotating Parity}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Rotating parity
+        && Address small-write problem by rotating parity block across drives (remove parity-disk bottleneck)
+    \end{easylist}
+
+\subsection{RAID Comparison: A Summary}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Striping
+        && Best performance
+        & Mirroring on RAID 1
+        && Simple, reliable, decent performance, but more expensive
+        && Average write time a little higher than if writing to just one disk
+        & RAID 4/5
+        && Gives capacity and reliability, but worse performance
+        & Other RAIDS exist
+        && Deal with multiple disk failures, fault handling, and software RAIDS
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: Dynamically Loadable Kernel Modules}
+\subsection{f}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & 
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L12: Arpaci-Dusseau, Chapter 38}
 \subsection{f}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
