@@ -2105,12 +2105,109 @@
 \subsection{Files and Directories}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & File
+        && Linear array of bytes
+        && Has lowlevel name (number) known as inode number
+        && Type (like .txt) is just a convention, file does not need to actually be of that type
+        & Directory
+        && Also has inode number
+        && Specifically has list of pairs of userreadable names with corresponding inode number
+        && Directory hierarchy starts with root directory
+    \end{easylist}
+
+\subsection{The File System Interface}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Creating Files
+        && open() and creat() return file descriptors (integer) private per process
+        & Reading and Writing Files
+        && Use strace to see system calls; read() and write() are used
+        & Reading And Writing, But Not Sequentially
+        && If reading from random offsets, use lseek() (also a sys call) to change value of variable in kernel 
+        & Writing Immediately with fsync()
+        && Use fsync() to force all dirty data to disk
+        & Renaming Files
+        && Use rename(), which is atomic
+        & Getting Information About Files
+        && Find this information in the inode
+        & Removing files
+        && Use unlink()
+        & Making Directories
+        && Use mkdir()
+        & Reading Directories
+        && Use opendir(), readdir(), closedir()
+        & Deleting Directories
+        && Use rmdir()
+    \end{easylist}
+
+\subsection{Hard Links and Symbolic Links}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & link() creates another name in directory you are linking to and refers it to the same inode number
+        && Two human names refer to same file
+        & Creating a file
+        && Is making inode structure, linking human-readable name to file, and putting file in directory
+        & Link count/reference count
+        && Tracks how many different file names have been linked to particular inode
+        && unlink() decrements count, breaks link, and only deletes if zero references to inode
+        & Symbolic/soft link
+        && Hardlinks cant link to directories or files in other disk partitions
+        && Symbolic link is actually a file itself (is just a soft link file)
+        && Removing original file but keeping soft link will create dangling reference
+    \end{easylist}
+
+\subsection{Making and Mounting a File System}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Making a filesystem
+        && Use mkfs to make empty filesystem with root directory onto disk partition
+        & Mount port
+        && Use mount(), which puts directory tree at the specified point
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L13: Arpaci-Dusseau Chapter 40: File System Implementation}
+\subsection{The Way To Think}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Data structures store data and metadata 
+        & Access methods maps methods like open() and read() onto structures
+    \end{easylist}
+
+\subsection{Overall Organization}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Divide disk into blocks
+        & Data Region holds user data
+        & Metadata holds info like where files are, file sizes, permissions
+        && This data is put in inode and goes into inode table (array of inodes)
+        & Allocation structures
+        && Track whether inodes and data blocks are allocated
+        && Freelist to track free blocks
+        && Or could use data bitmap for data region
+        && And an inode bitmap for inode table
+        & 0th block is superblock
+        && Holds info about this file system, like how many inodes and data blocks, where inode table is, etc
+        && When mounting, OS will read this
+        & Superblock | inode bitmap | data bitmap | inodes | data region
+    \end{easylist}
+
+\subsection{File Organization: The Inode}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & 
+    \end{easylist}
+
+\subsection{f}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
     \end{easylist}
 %========================================================
 
 %========================================================
-\section{L13: Arpaci-Dusseau, Chapter 38}
+\section{L13: Arpaci-Dusseau Chapter 40: File System Implementation}
 \subsection{f}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)

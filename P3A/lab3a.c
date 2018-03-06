@@ -150,16 +150,17 @@ void summarize_directory_entry(struct ext2_inode* inode, __u32 inode_num, __u32 
     // dir_entry is inside each element of i_block
     for (int i = 0; i < EXT2_NDIR_BLOCKS; i++) {
         while (offset < inode->i_size){
+            // Malloc and pread
             struct ext2_dir_entry* dir_entry = malloc(sizeof(struct ext2_dir_entry));
             if (pread(img_fd, dir_entry, sizeof(struct ext2_dir_entry), inode->i_block[i] * block_size + offset) < 0) {
                 fprintf(stderr, "Error: pread failed");
                 exit(2);
             }
 
-            if (dir_entry->inode == 0){
+            if (dir_entry->inode == 0 || dir_entry->rec_len == 0){
                 offset += dir_entry->rec_len;
                 dir_entry += dir_entry->rec_len;
-                continue;
+                return;
             }
 
             fprintf(stdout, "%s,%d,%d,%d,%d,%d,'%s'\n",
@@ -186,9 +187,11 @@ void summarize_indirect_ref(__u32 owner_inode_num, __u32 inode_num, __u32 ind, _
     if (ind == 0)
         return;
 
+    // Useful variable
     __u32 n_refs = block_size / sizeof(__u32);
-    __u32 refs[n_refs];
 
+    // pread
+    __u32 refs[n_refs];
     if (pread(img_fd, refs, block_size, inode_num * block_size) < 0) {
         fprintf(stderr, "Error: pread failed");
         exit(2);
@@ -274,9 +277,9 @@ void summarize_inode(struct ext2_super_block* super_block, struct ext2_group_des
             fprintf(stdout, ",%u", inode->i_block[b]);
         fprintf(stdout, "\n");
 
+        // Summarize directory and indirects
         if (file_type == 'd')
             summarize_directory_entry(inode, i + 1, block_size);
-
         if (inode->i_block[12] != 0)
             summarize_indirect_ref(i + 1, inode->i_block[12], 1, 12, block_size);
         if (inode->i_block[13] != 0)
