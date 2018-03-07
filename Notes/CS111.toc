@@ -203,5 +203,41 @@
 \contentsline {subsection}{\numberline {42.3}A Simple Disk Drive}{35}
 \contentsline {subsection}{\numberline {42.4}I/O Time: Doing The Math}{35}
 \contentsline {subsection}{\numberline {42.5}Disk Scheduling}{35}
-\contentsline {section}{\numberline {43}L12: A Dialogue on Persistence}{36}
-\contentsline {subsection}{\numberline {43.1}f}{36}
+\contentsline {section}{\numberline {43}L12: Arpaci-Dusseau, Chapter 38: Redundant Arrays of Inexpensive Disks}{36}
+\contentsline {subsection}{\numberline {43.1}Interface And RAID Internals}{36}
+\contentsline {subsection}{\numberline {43.2}How To Evaluate A RAID}{36}
+\contentsline {subsection}{\numberline {43.3}RAID Level 0: Striping}{36}
+\contentsline {subsection}{\numberline {43.4}RAID Level 1: Mirroring}{36}
+\contentsline {subsection}{\numberline {43.5}RAID Level 4: Saving Space With Parity}{36}
+\contentsline {subsection}{\numberline {43.6}RAID Level 5: Rotating Parity}{36}
+\contentsline {subsection}{\numberline {43.7}RAID Comparison: A Summary}{37}
+\contentsline {section}{\numberline {44}L12: Dynamically Loadable Kernel Modules}{37}
+\contentsline {subsection}{\numberline {44.1}Introduction}{37}
+\contentsline {subsection}{\numberline {44.2}Dynamically Loaded Module}{37}
+\contentsline {subsection}{\numberline {44.3}Criticality of Stable Interfaces/Hot-Pluggable Devices and Drivers/Summary}{37}
+\contentsline {section}{\numberline {45}L13: Arpaci-Dusseau Chapter 39: Interlude: Files and Directories}{38}
+\contentsline {subsection}{\numberline {45.1}Files and Directories}{38}
+\contentsline {subsection}{\numberline {45.2}The File System Interface}{38}
+\contentsline {subsection}{\numberline {45.3}Hard Links and Symbolic Links}{38}
+\contentsline {subsection}{\numberline {45.4}Making and Mounting a File System}{39}
+\contentsline {section}{\numberline {46}L13: Arpaci-Dusseau Chapter 40: File System Implementation}{39}
+\contentsline {subsection}{\numberline {46.1}The Way To Think}{39}
+\contentsline {subsection}{\numberline {46.2}Overall Organization}{39}
+\contentsline {subsection}{\numberline {46.3}File Organization: The Inode}{39}
+\contentsline {subsection}{\numberline {46.4}Directory Organization}{40}
+\contentsline {subsection}{\numberline {46.5}Free Space Management}{40}
+\contentsline {subsection}{\numberline {46.6}Access Paths: Reading and Writing}{40}
+\contentsline {subsection}{\numberline {46.7}Caching and Buffering}{40}
+\contentsline {section}{\numberline {47}L13: File Types and Attributes}{40}
+\contentsline {subsection}{\numberline {47.1}Ordinary Files}{40}
+\contentsline {subsection}{\numberline {47.2}Other file types}{41}
+\contentsline {subsection}{\numberline {47.3}File Attributes}{41}
+\contentsline {section}{\numberline {48}L13: Object Storage/Key-value database/FUSE}{41}
+\contentsline {subsection}{\numberline {48.1}Object Storage}{41}
+\contentsline {subsection}{\numberline {48.2}Key-value database}{41}
+\contentsline {subsection}{\numberline {48.3}FUSE}{41}
+\contentsline {section}{\numberline {49}L13: Introduction to DOS FAT Volume and File Structure}{42}
+\contentsline {subsection}{\numberline {49.1}Introduction/Structural Overview}{42}
+\contentsline {subsection}{\numberline {49.2}Boot block BIOS Parameter Block and FDISK Table}{42}
+\contentsline {section}{\numberline {50}L13: Arpaci-Dusseau Chapter 40: File System Implementation}{43}
+\contentsline {subsection}{\numberline {50.1}f}{43}

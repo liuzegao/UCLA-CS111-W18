@@ -2196,14 +2196,183 @@
 \subsection{File Organization: The Inode}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & 
+        & Index node (Inode)
+        && Low-level number with inumber
+        && To read, multiply number by sizeof(inode) + start address of inode table
+        && Holds metadata and some sort of pointer to the data itself
+        & The Multi-Level Index
+        && Indirect pointer points to block that contains direct pointers
+        && Double indirect points to block that contains indirect pointers
+        && Triple indirect points to block that contains double indirect pointers
+        & Extents instead of pointers
+        && Disk pointer with length (in blocks) 
+        && Limiting because hard to find very big contiguous space, so use multiple extents
+        & Typical traits of file systems
+        && Most files are small (2k)
+        && Average file size is growing (200k)
+        && Most bytes are stored in large files
+        && File systems hold a lot (100k) files
+        && File systems are about half full
+        && Directories are small, with under 20 entries
     \end{easylist}
 
-\subsection{f}
+\subsection{Directory Organization}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Directory entry
+        && Each has inum, reclen, strlen, and name
+        && Deleting file can leave gap, so use reclen; also set inode num to zero if delete
+        && Directory is entry in inode table; has pointers to data region (like other inodes) and directory entries are in this data region
+        && Directory data holds name -> inode number mappings
+    \end{easylist}
+
+\subsection{Free Space Management}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Use bitmaps to track free blocks and free inodes
+        && Could use free list, superblock has pointer to first free block, which then holds pointer to next free block
+        && Mark bit in bitmap with 1 if allocated
+        && Allocation structures only consulted when allocating, not when only reading
+        & Preallocation policy
+        && Find set of contiguous blocks when allocating space (improves performance)
+    \end{easylist} 
+
+\subsection{Access Paths: Reading and Writing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Read
+        && Recursively follow absolute path
+        &&& Start from root (which we just know somehow, usually is inode num 2)
+        &&& Search directories until we find the next piece, and repeat
+        &&& Eventually find the correct inode num matching the name, allocates file descriptor in per process open file-table, and returns fd to user
+        & Write
+        && May have to allocate a block
+        &&& And update allocation structures (data and inode bitmap)
+    \end{easylist}
+
+\subsection{Caching and Buffering}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & System memory DRAM to cache important blocks
+        && Early systems had fixed-sized cache
+        && Later, used dynamic partitioning approach; integrate virtual memory pages and file system pages into unified page cache 
+        && So first IO is costly, but later ones mostly just hit the cache
+        & Write buffering
+        && Delay writes and batch updates (wait 5-30secs)
+        && Also allows you to schedule writes efficiently
+        && Many databases can't do this, and use fsync() to force, or direct IO, or the raw disk interface
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L13: File Types and Attributes}
+\subsection{Ordinary Files}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Blob of zeroes and ones, meaningful when interpreted by program which understands underlying data format
+        && Textfile is bytestream delimited by newline and rendered as characters
+        & Data Types and Associated Applications
+        && Require user to specifically invoke correct command to process the data 
+        && Consult registry that associates program with file type
+        && Or just use suffix or magic number or some attribute
+        & File Structure and Organization
+        && Databases evolved from indexed sequential files to relational databases to key-value stores
+    \end{easylist}
+
+\subsection{Other file types}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Directories are just files
+        && Representation of namespaces, associations of names with blobs of data
+        && Directories hold files from multiple users; keyvalue stores contains data of one user
+        & Pipe
+        && Inter-Process Communications Ports
+        && Use write() and read() on file descriptors
+        && Can use open() on named pipes
+        & IO Devices
+        && Many sequential access devices (keyboards and printers) are byte-stream
+        && Random access devices (disks) use read()/write()/seek() model
+        && Other devices simply have memory mapped to it and are accessed directly, rather than through byte-stream
+    \end{easylist}
+
+\subsection{File Attributes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & System Attributes
+        && Type (regular, directory, pipe, device, symbolic link)
+        && Ownership (identify owning user/group)
+        && Protection (permitted access)
+        && File create/update/access time
+        && Size
+        & Extended Attributes
+        && Encrypted, signed, checksummed, internationalized localisations
+        && Other name=value attributes
+        && Resource forks have more info
+        & Diversity of Semantics
+        && POSIX operations are standard
+        && All the other ones are really not standard
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L13: Object Storage/Key-value database/FUSE}
+\subsection{Object Storage}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Allows addressing and identification of individual objects by more than just filename and path
+        & Separates metadata from object to support additional functionalities
+        & Data is stored/managed as objects rather than files or blocks
+    \end{easylist}
+    
+\subsection{Key-value database}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Associative arrays
+        && Stored and retrieved using key
+        && Opposite of relational database
+        && May save memory relative to RDB because doesnt need to store optional parameters
+    \end{easylist}
+
+\subsection{FUSE}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Filesystem in Userspace
+        && Software interface for Unix-like OS that lets non-privileged users create own filesystem in userspace through bridge to kernel interfaces
+        && Good for virtual file systems; don't actually store data, just translating
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L13: Introduction to DOS FAT Volume and File Structure}
+\subsection{Introduction/Structural Overview}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & BIOS
+        && BASIC IO Subsystem meant to provide runtime support for BASIC interpreter
+        & DOS FAT system still used
+        & Structural Overview
+        && Bootstrap
+        &&& Code to be loaded into memory and executed when computer is turned on 
+        && Volume descriptors
+        &&& Info describing the size, type, layout of the file system
+        && File descriptors
+        &&& Info describes file and where actual data is on disk
+        && Free space descriptors
+        &&& List of blocks unused that can be allocated to files
+        && File name descriptors
+        &&& Data structures regarding names with each file
+        & DOS FAT
+        && First block is bootstrap
+        && Then file allocation table; FAT is used as free list and to track which blocks have been allocated
+        && Rest of volume is data clusters
+    \end{easylist}
+
+\subsection{Boot block BIOS Parameter Block and FDISK Table}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
     \end{easylist}
+\clearpage
 %========================================================
 
 %========================================================
