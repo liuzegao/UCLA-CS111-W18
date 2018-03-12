@@ -2370,13 +2370,543 @@
 \subsection{Boot block BIOS Parameter Block and FDISK Table}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
-        & 
+        & Boot Block
+        && Begins with branch instruction
+        && Followed by volume description (BIOS Parameter block)
+        && Followed by real bootstrap code
+        && Followed by optional disk partitioning table (FDISK table)
+        && Followed by signature (error checking)
+        & BIOS Parameter Block
+        && Describes device geometry like number of bytes per sector, sectors per track, tracks per cylinder, sectors per volume
+        && Describes how file system is layed out on the volume, like number of sectors per cluster, number of reserved sectors, number of alternate file alloc tables, number of entries in root directory
+        & FDISK Table
+        && Partition disk into logical sub-disks
+        && Each entry describes a disk partition
+        && Master Boot Record (MBR) is the first sector of the disk and includes the FDISK table and a bootstrap to find the active partition
+        &&& Which then reads the partition boot record
+    \end{easylist}
+
+\subsection{File Descriptors (directories)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Directory entry
+        && Combine file description and file name into single file descriptor
+        && Has things like name, file attributes like file/subdir, hidden, readonly, pointer to first logical block, file length
+    \end{easylist}
+
+\subsection{Links and Free Space (File Allocation Table)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Allocate space to files in logical multi-block clusters
+        && File descriptor entry contains pointer to first cluster of that file; entry for that next cluster tells us cluster number for next
+        && Entire FAT in memory, so successive block numbers can be looked up w/o need to do disk IO
+        && If next block pointer == -1, then is end of file
+        && If next block pointer == 0, then this cluster is free
+        & Garbage Collection
+        && Early DOS did not free blocks when file was deleted, just crossed out first byte and eventually run out of memory
+        && Eventually would initiate garbage collection, starting from root directory and marking nonvalid entries as free
+    \end{easylist}
+
+\subsection{Descendents of the DOS file system}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Longer file names
+        && Users' biggest complaints were the short filenames
+        && Used primary and auxiliary entry; primary is backwards compatible and auxiliary holds extra letters of name and stuff
+        & Alternate/back-up FAT
+        && FAT corruption is catastrophic; so copy FAT to pre-reserved location, so will only lose new files rather than all files
+        & ISO 9660 for CDs
+        && Written once and contiguously, so lots of DOS features are irrelevant
+        && Tree structured directory hierarchies
+        && Dir entries contain file name, type, location fo first block, number of bytes, time/date
+        && Variable length fields (learned from DOS)
+        && Variable length extended attributes section as well
+    \end{easylist}
+
+\subsection{Summary}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & DOS is simple
+        && Doesn't have fancy linking stuff or multi user access control
+        && Doesn't take much space and just uses FAT isntead of free bock lists or file block pointers
+        && DOS is primitive and more or less works; but has lots of cludgy, upwards compatible upgrades
     \end{easylist}
 \clearpage
 %========================================================
 
 %========================================================
-\section{L13: Arpaci-Dusseau Chapter 40: File System Implementation}
+\section{L14: Arpaci-Dusseau Chapter 41: Locality and The Fast File System}
+\subsection{The Problem: Poor Performance}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Ken Thompson
+        && UNIX Wizard writes first file system which has superblock, inodes, and data blocks
+        && Solid step forward from record-based storage system and one-level hierarchies 
+        & Performance
+        && Really terrible because it treated disk like random-access memory, so lots of seektime and external + internal fragmentation
+        & Fast File System (FFS) is disk aware (Berkeley)
+        && Took interface but changed implementation
+        && Cylinder groups are groups of sets of tracks on different surfaces on hard drive
+        && Holds superblock, inode itmap, data bitmap, inodes, and data blocks for each cylinder group
+        & Policies: How To Allocate Files and Directories
+        && Keep related stuff together 
+        && Put directory data and inodes in cylinder groups with few allocated directories (balance directories across groups)
+        && Allocate data blocks of file in same group as its inode
+        && When measured, FFS does better than random, but still misses many types of locality
+    \end{easylist}
+
+\subsection{Large File Exception}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Large File
+        && Don't put it in group because it'll fill the entire group, which is bad for future files
+        && After direct pointers are used up, FFS puts other blocks in other block groups
+        & Amortization
+        && Reduce overhead by doing more work per overhead paid
+        && Basically, transfer a lot of data if you are going to physically seek
+    \end{easylist}
+
+\subsection{A Few Other Things About FFS}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Subblocks
+        && Worried about internal fragmentation because 4KB blocks
+        && So use subblock of 512 bytes, and allocate these blocks until the file grows to 4KB, then copy it over into a 4KB block and free the subblocks
+        && Lots of IO and expensive
+        & Modified libc
+        && Buffered writes prevent need for subblocks in most cases
+        & Parameterization
+        && When reading sequentially, read block 1, then block 2, but by time issued read for block 2, it rotated away
+        && So Sttager the layout scheme to avoid extra rotations
+        & Track Buffer
+        && Read the entire track, and just buffer that shit
+        & Long file names and atomic rename()
+        && FFS allowed for it which made it more user-friendly
+        & Symbolic Link
+        && FFS allowed for you to create alias to any other foile or directory on system (more flexible than hard link, which cannot point to directories)
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L14: Arpaci-Dusseau Chapter 42: Crash Consistency: FSCK and Journaling}
+\subsection{Example}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & File system data structures must persist despite presence of power loss or system crash
+        && Crash-consistency problem where two on-disk structures, and only one gets updated before crash
+        & Problems of appending block to a file
+        && Need to update inode, datablock, and bitmap, but can't update all three atomically
+        && Variety of problems can occur from this
+    \end{easylist}
+
+\subsection{File System Checker}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & fsck is a Unix tool for finding inconsistencies in metadata and repairing them
+        && Checks if superblock looks reasonable (correct file system size), if corrupt, allow admin to use alternate copy
+        && Scans inodes, indirect blocks, double indirects, etc; compares this against allocation bitmaps
+        && Checks inodes for corruption
+        && Verifies inode link counts by scanning directory tree and counting
+        && Checks duplicate pointers where two inodes refer to same block
+        && Checks for bad blocks (if it points out of valid range)
+        && Checks integrity of directory, ensuring '.' and '..' are there, that each inode referred to in the dir entries is allocated, and that no directory is linked more than once in the hierarchy
+        & fsck is very slow and kind of irrational
+    \end{easylist}
+
+\subsection{Journaling (Write-Ahead Logging)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Journaling is the file systems version of write-ahead logging
+        && Write note in well-known place of what you are about to do
+        && Have transaction identifier (TID)
+        && Transaction begin (TxB) tells about update (final addresses, TID)
+        && Transaction end (TxE) marks end of transaction
+        & Physical logging
+        && Put exact physical contents of update in journal
+        & Logical logging
+        && Put logical representation of update in journal, like "append data block Db to file X"
+        && Maybe better performance
+        & Checkpointing
+        && Once transaction is safely on disk, can overwrite old structures in file system
+        & Journal write and then checkpoint
+        && Write transaction to log; wait for them to complete; write pending updates to final locations in file system
+        & Writing to journal
+        && Don't write all five blocks (TxB, inode, bitmap, datablock, TxE) at once, because not safe, in case the Db (arbitrary data) is missed, we cannot know
+        && So write the first four, then TxE once they have completed
+        && So actually, it is journal write, journal commit, checkpoint
+        & Recovery
+        && If crashes before transaction commit, then just skip update
+        && If crash after commit, then replay transactions (redo logging) to ensure on-disk structures are consistent
+        & Batching Log Updates
+        && Do not commit each update to disk one at a time
+        && Buffer all updates into a global transaction
+        & Making The Log Finite
+        && Large log causes longer recovery
+        && If log is full, file system becomes useless
+        && So use a circular log and free space once checkpointed
+        & Journal superblock
+        && Mark in journal superblock that the transaction has been checkpointed 
+        && Reduces recovery time and enables re-use of log in circular fashion
+        & The above strategy is full data journaling
+        & Metadata Journaling
+        && Data write to final location, Journal metadata write to log, Journal commit to log and wait for it to complete, checkpoint metadata to final location, free transaction in journal superblock
+        & Tricky Case: Bock Reuse
+        && Stephen Tweedie's Nightmare for metadata journaling
+        && Create a file in a directory 
+        && Delete directory
+        && Create new file where the directory used to be
+        && If crash, then recovery will overwrite with metadata from the old file/directory
+        && Can solve this by never reusing block until checkpointed, or using a revoke record to never replay revoked data
+        & Other approaches
+        && Copy-on-write
+        &&& Never overwrite files or directories, place new updates to previously unused locations on disk
+        && Backpointer-based consistency
+        && Many others
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L14: Arpaci-Dusseau Chapter 43: Log-structured File Systems}
+\subsection{Writing To Disk Sequentially}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Motivation
+        && System memories are growing, performance determined by writes
+        && Large gap between random IO performance and sequential IO
+        && Existing file systems perform poorly on common workloads, like many short seeks for many writes
+        && File systems are not RAID aware, so logical write may cause many physical IOs
+        & Log-structured File System
+        && Buffers all updates in an in-memory segment, writing only when segment is full
+        && Always writes to free locations
+        & Write Buffering
+        && Keeps track of updates in memory; writes them all to disk at once
+        && Segment is a large chunk of updates
+        & How Much To Buffer?
+        && Want to amortize cost and get closer to achieving peak bandwidth
+        && Use formula to decide how much to buffer based on how close to peak bandwidth 
+    \end{easylist}
+
+\subsection{Problem: Finding Inodes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Old UNIX file system
+        && Calculate exact disk address by multiplying inode number by size of inode and adding the start of the array
+        & FFS
+        && Splits up inode table into chunks and places a group of inodes within each cylinder group
+        && So just need to know how much each chunk of inodes is, and start addresses
+        & LFS
+        && Inodes are scattered throughout disk, so more complex
+    \end{easylist}
+
+\subsection{Solution Through Indirection: The Inode Map}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Inode map takes inode number and produces disk address of most recent version
+        & LFS places chunks of inode map next to where its writing all other information
+        & Checkpoint region
+        && Pointers to latest pieces of inode map, so find inode map by reading CR
+        & Reading A File From Disk: A Recap
+        && Read checkpoint region
+        && Use checkpoint regions pointers to find entire inode map
+        && Then when given innode number of a file, simply look up inode-number to inode-disk-address mapping in imap and read most recent version of inode
+    \end{easylist}
+
+\subsection{What About Directories?}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Directory
+        && Just collection of (name, inode number) mappings
+        && Look in inode map to find location of directory's inode
+        && Find location of directory data from dir inode
+        & Recursive update problem
+        && Whenever inode updated, location on disk changes, which may have mandated change in direcotry which pointst ot this
+    \end{easylist}
+
+\subsection{A New Problem: Garbage Collection}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Periodically clean old versions of file data, inodes, structures
+        && Compact M existing live segments into N new segments, and write N segments to new locations
+        && Because we don't want to just have little blocks laying around
+        & Segment Summary Block
+        && Has inode number (which file) and offset (block of file) for each data block
+        && Compare info in segment summary block with info in inode to see if a block is alive
+        & When to clean?
+        && Original approach was between hot and cold
+        && Hot if frequently overwrriten
+        && Cold if mostly stable
+        && Clean the cold segments sooner and hot later
+    \end{easylist}
+
+\subsection{Crash Recovery and The Log}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & LFS has two checkpoint regions
+        && Detect system crash during CR update because of inconsistent timestamps
+        && Read CR to recover
+        & Roll forward
+        && Start with last checkpoint region, find end of log, use that to read through next segments to find valid updates
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L14: Arpaci-Dusseau Chapter 45: Data Integrity and Protection}
+\subsection{Disk Failure Modes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Latent sector errors (LSE)
+        && Head crash is when disk head touches surface
+        && Cosmic rays can flip bits
+        && Error correcting codes (ECC) are used by drive to detect errors/sometimes fix them
+        && Silent Faults are when disk give no indication of problem, despite returning faulty data
+        && Fail-partial (instead of fail-stop) is when disk works despite some blocks inaccessible/corrupt
+        & Should try to detect both LSE and block corruption, because they both occur somewhat frequently
+    \end{easylist}
+
+\subsection{Handling Latent Sector Errors}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & If mirrored RAID or RAID 4/5, just reconstruct
+        & Or add extra redundancy, like through RAID-DP's second parity disk, to help reconstruct during entire disk failure and LSE
+    \end{easylist}
+
+\subsection{Detecting Corruption: The Checksum}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Detection of corruption is difficult
+        & Checksum is a function peprformed on a chunk of data which produces something
+        & Common Checksums
+        && XOR
+        && Addition
+        && Fletcher checksum; $s1 += d_i; s2 += s1 \forall d_i$
+        && Cyclic redundancy check (CRC); treat region as a binary number, divide it by some constant value; use the remainder
+        & No perfect checksum
+        && Because going from big to small
+        && Just want to minimize collisions and be easy to compute
+        & Checksum layout
+        && 520 bytes for data sector, 8 bytes for checksum
+        && Maybe put all checksums next to sector, or put them at front
+        & Using checksums
+        && Compute and compare against stored; if corrupted, use backup or give up
+        & Overhead
+        && Space overheads are relatively small
+        && Time overheads can be noticeable
+        && Sometimes, extra IO overhead will occur
+    \end{easylist}
+
+\subsection{A New Problem: Misdirected Writes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Misdirected write is when data is written to the wrong location
+        && Add physical identifier (like block number and disk) and compare it when reading
+    \end{easylist}
+
+\subsection{One Last Problem: Lost Writes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Write doesn't actually occur even though it was supposed to
+        && Use write-verify or read-after-write
+        && Immediately read daa after write and compare
+    \end{easylist}
+
+\subsection{Scrubbing}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Disk scrubbing
+        && Periodically read through every block of the system and verify checksums
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L15: Security for Operating Systems}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Important because so widely used
+        && Few OS choices and entirety of security is built upon secure OS
+        && OS is big and complex, has control of all hardware, can do anything it wants, processes cannot protect self against OS
+        && 
+    \end{easylist}
+
+\subsection{Security Goals and Policies}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Confidentiality
+        && If not supposed to be known by others, don't tell anyone it
+        & Integrity
+        && If not supposed to be changed, don't let anyone change it
+        & Availability
+        && If something is supposed to be available, don't let anyone prevent its use
+        & Non-repudiation
+        && If someone told us something, cannot later deny that they did
+        & Security vs Fault tolerance
+        && Don't want to totally isolate processes from each other, and processes share OS resources
+    \end{easylist}
+
+\subsection{Designing Secure Systems}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Economy of mechanism
+        && Keep system small and simple because it'll have fewer bugs and be easier to understand
+        & Fail safe defaults
+        && Set the default policy to be more secure, not less
+        & Complete mediation
+        && Check if action meets security policies every time the action is taken
+        & Open design
+        && Assume adversary knows design, and still achieve goals (they usually do know)
+        & Separation of privilege
+        && Require separate parties/credentials to perform critical actions (two-factor auth)
+        & Least privilege
+        && Give minimum privileges necessary (bc adversary maybe leverage friends error)
+        & Least common mechanism
+        && Separate data structures for different users/processes (page table)
+        & Acceptability
+        && Users must be willing to use it
+    \end{easylist}
+
+\subsection{The Basics of OS Security}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Controlling processes access to hardware
+        && Hardware is shared bt all processes, so don't let one process interfere with another
+        & Weak links
+        && Spend time securing weakest link (typically, people)
+        & System calls
+        && OS will use PID and access control mechanisms to determine if process is authorized
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L15: Authentication}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Context
+        && Who is asking is relevant
+        & Pricipal is security-meaningful entity, like human or some softwares
+        && Process or entity performing request on behalf of principal is called the agent
+        & Credential is any data created/managed by OS to track access decisions for future reference
+        & Permission privileges based on identity are very important
+        && Need way to attach identity to process
+    \end{easylist}
+
+\subsection{Attaching Identities to Processes and Authentication}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Inherit identity usually
+        && OS's user login will assign new identity
+        && OS must be able to qury user identity info
+        & Authentication
+        && Based on what you know, what you have, what you are
+        & Authentication by what you know
+        && Typically password which nobody knows/can guess except the true user
+        && Hash password using cryptographic hash
+        && Attackers often use dictionary attack, just list of specialized, common strings
+        && Password vaults are encrypted files on your computer that store passwords and have their own password
+        && Salt is a big random number concatenated to password, then you hash this and store both the result and random number
+        && Passwords are kind of outdated; best used as part of multi-factor auth
+        && Don't indicate whether username or password is incorrect
+        & Authentication by what you have
+        && Like ID or ticket
+        && Compares username/password and don't tell which is wrong
+        && Or hard to learn information (string on screen, changing numbers, cellphone text)
+        & Authentication by what you are
+        && Image of user needs to not require perfect match
+        && Close enough, for auth
+        && False negative if incorrectly decided not to authenticate
+        && False positive if incorrectly decided to authenticate
+        && Crossover error rate is where the two curves cross
+        && Biometrics are okay sometimes if you have the hardware and want convenience over higher security
+        && But biometrics over network is dangerous
+        && Biometric of typing pattern is also feasible
+        & Authentication by where they are
+        && Like person at DMV
+    \end{easylist}
+
+\subsection{Authenticating Non-Humans}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Identity or password
+        && Also can change identity if admin
+        && Or if part of a group
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L15: Access Control}
+\subsection{Important Aspects of the Access Control Problem}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Figure out if request fits within security policy
+        && If so, perform operation; otherwise, don't
+        & Authorization
+        && Determining of particular subject is allowed to perform something
+        & Reference Monitor
+        && Code that decides when access control decisions will be made
+        & Access Control Lists
+        && Just list to know who to let in
+        && 9 bits, RWX for owner, group, everyone else
+        && Easy to figure out who has access
+        && Revocation of privilege is easy
+        && Easy to find the information because its with the file metadata
+        && Hard to determine entire set of resources a principal (process or user) can access
+        && Also, need common identity across all machines in distributed environment 
+        & Capabilities (Hydra OS)
+        && Like a key, just give it to whoever needs
+        && Need to be able to revoke keys, and need to hand to correct person
+        && Capability is just a bunch of bits, long and complex
+        && So people could just generate the capabilities, should be uncopyable
+        && Deal with this by not letting process actually access the capability, OS does it all and encrypts the shit if distributed
+        && Having giant list would be expensive (because so many files)
+        && Easy to give subsets of capabilities to child processes
+        & Namespaces
+        && Names across distributed environments is hard
+        && Could have central approval, or could just do it with namespaces, where participants get to choose anything from some portion
+        & Use control lists, and capabilities under the covers
+        && When call open(), ACL is not examined on subsequent writes
+        && Linux creates data structure like a capability and attach it to the process's PCB that is checked on subsequent read/writes
+        && When file is closes, capability is deleted, and so needs to go through ACL to open again
+        && Do similar things for hardware devices, IPC channels because they are treated like files
+        && This solution avoids costs of checking ACL on every operation (capability easy to check)
+        && Managing capabilies is avoided because only setup if ACL successful
+        && Scaling not an issue because few files opened, typically
+    \end{easylist}
+
+\subsection{Mandatory and Discretionary Access Control}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Mandatory Access Control
+        && Can override desires of owner of the information
+        & Discretionary Access Control
+        && Almost anyone/no one is given access to a given resource at discretion of owning user
+    \end{easylist}
+
+\subsection{Practicalities of Access Control Mechanisms }
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Default access permissions
+        && Can be changed, but users rarely do this
+        & Android
+        && Many small independent apps, which should not have the same privileges as the user himself
+        && So use permission labels as mandatory capabilities to exercise the principle of least privilege
+        && Not perfect though, because many users don't know what they are granting and will grant it anyways because they want the app to work
+        & Role-Based Access Control
+        && Create roles, and assign privileges to that role; let users assume and change roles;
+        && Users choose from a restricted set of roles
+        & Type Enforcement 
+        && Finer granularity than just read/write, can be permitted to add a particular type of record, etc
+        && Associates detailed access rules to particular objects using security context
+        & Privilege escalation
+        && Allows caeful extension of privileges by allowing program to run with privileges beyond thos eof user who invokes them
+        && SetUID lest you run with permissions of another user
+        & Linux sudo
+        && Allow designated users to run certain programs under another identity
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L15: Arpaci-Dusseau Chapter 40: File System Implementation}
 \subsection{f}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)

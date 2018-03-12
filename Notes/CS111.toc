@@ -239,5 +239,44 @@
 \contentsline {section}{\numberline {49}L13: Introduction to DOS FAT Volume and File Structure}{42}
 \contentsline {subsection}{\numberline {49.1}Introduction/Structural Overview}{42}
 \contentsline {subsection}{\numberline {49.2}Boot block BIOS Parameter Block and FDISK Table}{42}
-\contentsline {section}{\numberline {50}L13: Arpaci-Dusseau Chapter 40: File System Implementation}{43}
-\contentsline {subsection}{\numberline {50.1}f}{43}
+\contentsline {subsection}{\numberline {49.3}File Descriptors (directories)}{42}
+\contentsline {subsection}{\numberline {49.4}Links and Free Space (File Allocation Table)}{42}
+\contentsline {subsection}{\numberline {49.5}Descendents of the DOS file system}{43}
+\contentsline {subsection}{\numberline {49.6}Summary}{43}
+\contentsline {section}{\numberline {50}L14: Arpaci-Dusseau Chapter 41: Locality and The Fast File System}{44}
+\contentsline {subsection}{\numberline {50.1}The Problem: Poor Performance}{44}
+\contentsline {subsection}{\numberline {50.2}Large File Exception}{44}
+\contentsline {subsection}{\numberline {50.3}A Few Other Things About FFS}{44}
+\contentsline {section}{\numberline {51}L14: Arpaci-Dusseau Chapter 42: Crash Consistency: FSCK and Journaling}{45}
+\contentsline {subsection}{\numberline {51.1}Example}{45}
+\contentsline {subsection}{\numberline {51.2}File System Checker}{45}
+\contentsline {subsection}{\numberline {51.3}Journaling (Write-Ahead Logging)}{45}
+\contentsline {section}{\numberline {52}L14: Arpaci-Dusseau Chapter 43: Log-structured File Systems}{46}
+\contentsline {subsection}{\numberline {52.1}Writing To Disk Sequentially}{46}
+\contentsline {subsection}{\numberline {52.2}Problem: Finding Inodes}{46}
+\contentsline {subsection}{\numberline {52.3}Solution Through Indirection: The Inode Map}{47}
+\contentsline {subsection}{\numberline {52.4}What About Directories?}{47}
+\contentsline {subsection}{\numberline {52.5}A New Problem: Garbage Collection}{47}
+\contentsline {subsection}{\numberline {52.6}Crash Recovery and The Log}{47}
+\contentsline {section}{\numberline {53}L14: Arpaci-Dusseau Chapter 45: Data Integrity and Protection}{47}
+\contentsline {subsection}{\numberline {53.1}Disk Failure Modes}{47}
+\contentsline {subsection}{\numberline {53.2}Handling Latent Sector Errors}{48}
+\contentsline {subsection}{\numberline {53.3}Detecting Corruption: The Checksum}{48}
+\contentsline {subsection}{\numberline {53.4}A New Problem: Misdirected Writes}{48}
+\contentsline {subsection}{\numberline {53.5}One Last Problem: Lost Writes}{48}
+\contentsline {subsection}{\numberline {53.6}Scrubbing}{48}
+\contentsline {section}{\numberline {54}L15: Security for Operating Systems}{49}
+\contentsline {subsection}{\numberline {54.1}Introduction}{49}
+\contentsline {subsection}{\numberline {54.2}Security Goals and Policies}{49}
+\contentsline {subsection}{\numberline {54.3}Designing Secure Systems}{49}
+\contentsline {subsection}{\numberline {54.4}The Basics of OS Security}{49}
+\contentsline {section}{\numberline {55}L15: Authentication}{50}
+\contentsline {subsection}{\numberline {55.1}Introduction}{50}
+\contentsline {subsection}{\numberline {55.2}Attaching Identities to Processes and Authentication}{50}
+\contentsline {subsection}{\numberline {55.3}Authenticating Non-Humans}{50}
+\contentsline {section}{\numberline {56}L15: Access Control}{51}
+\contentsline {subsection}{\numberline {56.1}Important Aspects of the Access Control Problem}{51}
+\contentsline {subsection}{\numberline {56.2}Mandatory and Discretionary Access Control}{51}
+\contentsline {subsection}{\numberline {56.3}Practicalities of Access Control Mechanisms }{51}
+\contentsline {section}{\numberline {57}L15: Arpaci-Dusseau Chapter 40: File System Implementation}{52}
+\contentsline {subsection}{\numberline {57.1}f}{52}
