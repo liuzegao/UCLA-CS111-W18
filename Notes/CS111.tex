@@ -2906,8 +2906,469 @@
 %========================================================
 
 %========================================================
-\section{L15: Arpaci-Dusseau Chapter 40: File System Implementation}
-\subsection{f}
+\section{L15: Cryptography}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & If others gain access to critical data outside control of OS
+        && Don't want them to be able to use it, so alter it
+        && Use cryptography to alter data in controlled ways
+        && Is expensive and must be done correctly to be useful
+        & Cryptography
+        && Cipher is algorithm used on data
+        && Key is second piece of info to augment 
+        && Ciphertext is altered data
+        && Computationally infeasible to to extract P without K, encryption/decryption algs are probably known by everyone
+        && Cryptography relies entirely on secrecy of key
+        & Can tell if someone tampered with data by including and comparing hash of plaintext
+        & Symmetric Cryptography
+        && Use same key to encrypt and decrypt
+    \end{easylist}
+
+\subsection{Public Key Cryptography}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Public and private key
+        && Public key known to everyone and used to decrypt
+        && Private key is secret and used to encrypt
+        && Can use decryption key to encrypt, then use encryption key to decrypt
+        &&& Doesn't work for authentiation anymore though, because people know the key used to encrypt
+        && Authentication if encrypt with private key
+        && Secret communication if encrypt with public key
+        && Hundreds of times more expensive than symmetric
+        & Authentication and secret
+        && Two pairs of public and private keys
+        && Alice encrypts msg with her private key, then encrypts msg with Bob's public key
+        && Only Bob can decrypt it with his private key, then confirm it is Alice using her public key (only Alice could have created that msg)
+        & Key distribution
+        && Originally, everyone only knows their own public key
+    \end{easylist}
+
+\subsection{Cryptographic Hashes}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Cryptographic hash ensures integrity
+        && Hash reduces size
+        && Hash a piece of data, encrypt only hash, send encrypted hash and data to partner
+        && If opponent tampers, when decrypt hash and repeat hash on data, will detect mismatch
+        && Want to make it infeasible for opponent to find any other plaintext which hashes to the same thing
+        && Encrypt hash because anyone can just replace msg and hash, but only one person knows proper encrypted version
+        & Cryptographic hashes for other uses
+        && Used for storing salted passwords
+        && Proof-of-work for spam prevention and blockchain
+    \end{easylist}
+
+\subsection{Cracking Cryptography}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Cracking
+        && Usually, crack it by obtaining keys or through flaws in your management of cryptography
+        && Improper distribution of secret keys, choosing keys from reduced set of choices, etc
+        & Heartbleed
+        && Obtain keys and decrypt entire session
+        & Key Selection
+        && Must select keys randomly, so that opponent can't just figure out how you created the keys
+        && Perfect forward secrecy is when figuring out one key won't help opponent figure out other keys
+        & Gathering entropy
+        && Read low-order bits from hardware processes
+        & PK uses long keys (2K or 4K bits)
+        && Can use mathematical properties of system to derive private key from public key, so use very long keys to make this difficult
+    \end{easylist}
+
+\subsection{Cryptography and Operating Systems}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Must trust OS, or else no chance
+        & Hash passwords, encrypt data, and at-rest data encryption
+        & At-Rest Data Encryption
+        && Never store decrypted data on disk
+        && Data in memory is decrypted and is encrypted when written to disk
+        && Few percent extra latency from overhead for IO intensive operations
+        && Only provides protection if someone physically takes the storage device
+        &&& Person will read useless bits
+        & Homomorphic cryptography
+        && Allows you to perform operations on encrypted form of data without decrypting it
+        && Not used bc high performance/storage costs
+        & Password vault
+        && Encrypt all passwords and have a single password to decrypt them
+    \end{easylist}
+
+\subsection{Cryptographic Capabilities}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Encrypted data structure for capabilities
+        && Could give this data structure to user, who would present it
+        && Symmetric cryptographic capabilities make sense when all machines creating/checking are trusted and key distrib is easy
+        && Assymetric if secrecy is required
+        && Could hold info like expiration times, identity, etc
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L16: Distributed Systems Goals and Challenges}
+\subsection{Goals: Why Build Distributed Systems}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Internet
+        && Collaborate with others
+        & Client/Server Usage Model
+        && More functionality and more efficient if remote/centralized resources rather than all connected to computer
+        & Reliability and Availability
+        && Distribute service over multiple independent servers, so no single point of failure
+        & Scalability
+        && Don't replace computer every time
+        && Build a system which can be incrementally expanded (scale-out)
+        & Flexibility
+        && May decide we need to run different parts on different computers
+        && Easy to change deployment model if components interact through network protocols
+    \end{easylist}
+
+\subsection{Challenges: Why are Distributed Systems Hard to Build}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & New and More Modes of Failure
+        && Whole system may die if one part of system fails
+        && One node can crash while others continue running
+        && Occasional network messages may be delayed/lost
+        && Switch failure may interrupt communication between some nodes
+        && In distributed system, hard to tell if a component has failed
+        &&& May only detect this because no longer receiving messages
+        && Need a robust system if we want to keep running despite failure of individual components
+        &&& Error checking, breaking locks, restoring resources
+        & Complexity of Distributed State
+        && Distinct nodes in distributed system operate independently, so hard to ensure correct serialization
+        && Different nodes may consider a single resource to be in different states
+        & Complexity of Management
+        && Many different configurations
+        && Nodes may not be up when updates are sent
+        & Much Higher Loads
+        && Build distributed systems to handle more loads, which lead to bottlenecks, messages, overhead, race conditions, etc
+        & Heterogeneity
+        && May have different instruction set architecture, OS, version of software/protocols, networks, file systems, etc
+        & Emergent phenomena
+        && Emergent behaviors that are not present in constituent components
+        & Peter Deutsch's "Seven Fallacies" of Distributed Computing
+        && Network is reliable
+        && Latency is zero
+        && Bandwidth is infinite
+        && Network is secure
+        && Topology does not change (routes between clients/servers)
+        && There is one admin
+        && Transport cost is zero
+        && Network is homogenous (extra 8th)
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L16: Arpaci-Dusseau: Chapter 48: Distributed Systems}
+\subsection{Communication Basics}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Failure as a challenge
+        && Many things fail, hard to build perfect things, so use distributed system
+        & Performance, security, and communication are all important
+        & Communication Basics
+        && Fundamentally unreliable
+        && Lots of reasons for packet loss/corruption, like bits getting flipped, electricla problems, lack of buffering (packets must be dropped)
+    \end{easylist}
+
+\subsection{Unreliable Communication Layers}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & UDP/IP
+        && Uses sockets API to create communication endpoint and sends UDP datagrams, fixed-sized messages
+        && Does not ensure packets reach destination, but includes checksum
+    \end{easylist}
+
+\subsection{Reliable Communication Layers}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Acknowledgement (Ack)
+        && Receiver sends short acknowledgement msg back to sender
+        && Timeout meachnism if sender doesn't receive in time
+        && If timeout, will retry
+        && Acknowledgement msg could get lost, so need to guarantee each message received exactly once
+        & Sequence Counter
+        && Sender and Receiver both have starting value
+        && Only send value to application if message number matches counter
+        && If counter is higher than message number, then already received it, so acknowledge but don't send to application
+        & TCP/IP
+        && Reliable communication layer
+        && Has many other mechanisms to handle congestion, multiple outstanding requests, etc
+    \end{easylist}
+
+\subsection{Communication Abstractions}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Timeout Value
+        && Exponential back-off, increase timeout value exponentially to avoid overlaoding the system with re-sends
+        && Timeout value should ideally be just long enough to detect packet loss
+        & Distributed shared memory (DSM)
+        && Enable processes on different machines to share large, virtual address space
+        && Nobody uses anymore beacuse some accesses to memory are really slow
+    \end{easylist}
+
+\subsection{Remote Procedure Call (RPC)}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Stub Generator
+        && Stub generator takes interface and generates client stub
+        && Client stub code
+        &&& Creates msg buffer, packs info, sends msg, waits for reply, unpacks/unmarshal/deserialize return code/args, return to caller
+        && Server code
+        &&& Unpack/unmarshal/deserialize msg, call actual function, package results, send reply
+        & Issue of more complex data structures
+        && Deal with pointers and stuff by passing well-known types or annotating data structure
+        & Thread pool
+        && Finite set of threads created
+        && When msg arrives, dispatch to one of the worker threads to do work
+        && Main thread can continue receiving
+        & Run-time Library
+        && How to locate remote service - naming problem
+        && Simple approach is to build off of hostnames and port numbers
+        && Building on TCP may be inefficient, but UDP may be Unreliable
+        && Build on UDP for performance, RPC then implements reliability using timeout/retry, acknowledgements, and sequencing
+        & If remote call takes a long time to complete, needs to not appear as a failure
+        &&& Could acknowledge, then reply later
+        &&& Client could also ask if still working, and get a reply
+        & Large arguments
+        && Server-side fragmentation (breaking large packets into smaller ones)
+        && Receiver-side reassembly (small to larger logical whole)
+        & Byte ordering
+        && Big endian vs little endian problem, solved by welld-defined endianness in msg format
+        && Big endian is most significant to least significant, like Arabic (little is opposite)
+        & End-to-end Argument
+        && Corruption could occur before even sent, or before written to memory by receiver, etc
+        && So typically compare checksums
+        & Synchronous or asynchronous
+        && Client may have to wait a long time, so some RPC packages enable you to invoke request and return immediately to do other work
+        & gRPC and Apache Thrift
+        && Two RPC packages
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L16: REST-ful Interfaces}
+\subsection{Communication Basics}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Representational State Transfer by Roy Fielding
+        && Web services provide interoperability between computer system through the internet
+        && Allow requests to access/manipulate textual representations through uniorm, predefined, stateless operations
+        && Client-server architecture enables separation of concerns, improving scalability
+        && Stateless operations mean that no client context is stored on server between requests; every requests has full information
+        && Cacheability must be defined by responses to prevent reuse of stale data
+        && Layered system improves scalability by enabling load balancing and providing shared caches
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L16: Lease-Based Serialization}
+\subsection{Challenges of Distributed Locking}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Zero latency, reliable delivery, stable topology, consistent management
+        && Obtaining lock through messages may take 1mil x longer
+        && Operations not guaranteed to complete, because requests/responses may be lost
+        && When node crashes, locks may be forgotten/lost
+        && There is no WAN-scale (wide area network) atomic instructions or interrupt disables
+        && Set of resources and order are not known, so cannot use ordering to prevent deadlock
+    \end{easylist}
+
+\subsection{Addressing these Challenges}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Replace leases with locks
+        && Lease grants owner exclusive access to resource until owner releases or lease duration expires
+        && Locks work on honor system; leases are enforced, because request will be rejected 
+        & Recovering from failure of lease-holder
+        && If failed midway through an update, then object state is inconsistent
+        && Choice of lease period needs tuning (renew many times per period vs long time to recover)
+        & Don't send network msg for every entry into critical section
+        && Leases should be used for longer-lived resources (DHCP allocated IP addresses) because amortization
+    \end{easylist}
+
+\subsection{Evaluating Leases}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Mutual Exclusion
+        && At least as good as locks; also good bc potential for enforcement (unlike locks)
+        & Fairness
+        && Depends on policies of remote lock manager
+        & Performance
+        && RPC to get lease is very expensive, but okay if we keep for many operations
+        & Progress
+        && Automatic preemption creates deadlock immunity
+        && Lessees have to wait for lease period to expire if lease-holder dies
+        & Robustness
+        && More robust than locks
+        & Problems
+        && Very complex to recover from lock-server failures
+        && Hard to determine time for automatic lease expiration
+        & Opportunistic Locks
+        && Can ask for a long-term lease, enabling future locking to be purely local operation
+        && Lock manager revokes if necessary
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L16: Lease-Based Serialization}
+\subsection{Communication Basics}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Consensus requires agreement among multiple processes for some data value
+        && Some processes may fail or be unreliable, so needs fault tolerance
+        && Satisfy termination, validity, integrity, agreement to be fault tolerant
+        & Termination
+        && Every correct process decides some value
+        & Validity
+        && If all processes propose v, correct processes decide v
+        & Integrity
+        && Corect process decides at most one value
+        & Agreement
+        && Every correct process must agree on same value
+    \end{easylist}
+%========================================================
+
+%========================================================
+\section{L16: Distributed System Security}
+\subsection{Introduction}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & OS can only control itse own machine's resources
+        && Other machines in distributed system might not be secure, but still need to trust their credentials and capabilities
+        && Adversaries can alter our communication across network
+    \end{easylist}
+
+\subsection{The Role of Authentication}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Cannot really know
+        && Cannot know that partner in system is using correct security policies
+        && Can only detect when they don't and then take compensating action
+        & Authenticate to know who you are truly speaking to over network
+        && Rely on cryptohashed salted password or private/public key to authenticate
+        && Use PK to  authenticate website to user (bc only need to give one public key to everyone)
+        && Use passwords to authenticate user to website (bc easier; alternative is to distribute user public keys to website)
+    \end{easylist}
+
+\subsection{Public Key Authentication for Distributed Systems}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Certificate Authority
+        && Company will confirm that a particular company has a particular public key
+        && Hashes the company name, public key, and some info
+        && Then encrypt this hash with CA's private key, producing digital signature
+        && Then combine this info with CA's info into a certificate
+        && Give this certificate to company for money
+        & If user needs company's public key
+        && User will examine certificate, regenerate the hash, and compare
+        && If no problems, then continue
+        && Good bc user keeps company untrusted until certificate is valid
+        & Certificate authority's public key
+        && Comes with software like browsers/etc
+        & Anyone can create certificate
+        && Can make your own
+        & Replay attacks
+        && If public key decrypts someone's private msg, then it indeed came from that person, but risk for replay attack
+        && Problem where someone captures msg, then sends it at a later time
+        && Fix this by having unique information in each message
+    \end{easylist}
+
+\subsection{Password Authentication for Distributed Systems}
+    \begin{easylist}
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Good for users authenticating to server
+        && Not good for servers authenticating to user
+        & User provide user ID and password
+        && Encrypt both before sending over network
+        & Use authentication to establish initial authenticity
+        && Then use something else for subsequent interactions
+    \end{easylist}
+
+\subsection{SSL/TLS}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & SSL is before TLS
+        && Secure Socket Layer came before Transport Layer Security
+        && TLS is better, don't use SSL
+        && People refer to SSL and TLS as the same thing
+        & SSL 
+        && Move encrypted data through ordinary socket
+        && Setup new key to encrypt bulk of data for each connection, even if same partner
+        && Decide on set of ciphers, techniques, hashes, etc
+        && Client usually obtains certificate with server's public key, then use public key in certificate to verify authenticity
+        && This way of sending certificate is just as insecure as others
+        && Once have certificate, can proceed with Diffie-Hellman key exchange
+        &&& Server signs messages with private key, client does not do the same though
+        &&& Alice and Bob agree upon a large prime number (n) and a primitive mod n (g)
+        &&& Both Alice And Bob generate random numbers x and y
+        &&& Then compute $X = g^x mod n$ and $Y = g^y mod n$
+        &&& Then they compute $k = Y^x mod n$ = $X^y mod n$, which will be equal
+        &&& Guarantee securely shrae a key with someone, but not sure who
+        & SSL/TLS is a protocol
+        && Software implementations may have bugs
+    \end{easylist}
+
+\subsection{Other Authentication Approaches}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Web cookies
+        && Verify identity once and rely on it for future for convenience
+        && Various security issues, like user storing cookie, etc
+        & Challenge/Response
+        && Hardware token or data secret must be setup and distributed before challenge is issued
+        && Server sends challenge to client, client is only one who can compute response based on some secret knowledge
+        && Probably will crypto hash the challenge and response
+        & Authentication Server
+        && Everyone trusts server, rely on server to authenticate identity
+        && Kerberos is an example of an online version
+        && Certificate authorities are like an offline example of this
+    \end{easylist}
+
+\subsection{Higher Level Tools}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & HTTPS
+        && Cryptographically protected version of HTTP
+        && Connects SSL/TLS to existing definition of HTTP
+        && SSL takes care of establishing secure connection, authenticating using certificate, establishing new symmetric encryption
+        && Certificates are gathered and managed by browser
+        && Designed to secure web browsing at a low development cost
+        & SSH 
+        && Secure Shell was originally intended to be used as a secure remote shell, but now extended into general tool for secure interactions between computers
+        && Can be used for X window sessions, TCP ports, etc
+        && Users must still be authenticated, shared encryption keys established, integrity checked
+        && Relies on public key cryptography and certificates
+        & Man-in-the-middle
+        && Two parties think they are communicating directly, but a malicious third party is in the middle, sees everything, can inject
+        && When setting up SSH with remote machine you haven't logged into before, you get a warning asking to trust the public key
+        && Everyone just says yes, so maybe this warning not that good, but still there
+        & SSH not build on SSL, separate implementation
+    \end{easylist}
+
+\subsection{Summary}
+    \begin{easylist}  
+    \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
+        & Distributed systems are critical to modern computing, but difficult to secure
+        && Need to ensure that insecure networks don't introduce new security problems
+        && Messages sent are encrypted and authenticated, protecting privacy and integrity
+        & SSL/TLS, public keys, and certificates help provide these services
+        & Passwords help authenticate remote human users
+        & Symmetric cryptography used to transport most data, because cheaper than assymetric cryptography
+        & Symmetric keys not shared by system participants
+        && Exchange symmetric key as first step
+        & Key secrecy is eessential
+        & Diffie Hellman key exchange is used, but still requires authentication that only intended participants know the key
+        & Do not build your own cryptographic solution
+    \end{easylist}
+\clearpage
+%========================================================
+
+%========================================================
+\section{L16: Leases}
+\subsection{Communication Basics}
     \begin{easylist}  
     \ListProperties(Hide=100, Hang=true, Progressive=4ex, Style*=--\ , Style2*=$\bullet\ $)
         & 
