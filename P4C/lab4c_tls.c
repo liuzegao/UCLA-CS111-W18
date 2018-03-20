@@ -31,7 +31,7 @@ int period = 1;     // default = 1
 char scale = 'F';   // default = F
 int log_fd = -1;    
 char* student_id = "000000000";
-char* host = "localhost";
+char* host = "lasr.cs.ucla.edu";
 int port = -1;
 
 // Globals
@@ -40,10 +40,11 @@ int enabled = 1; // 0 = disabled; 1 = enabled
 // Globals for server
 struct sockaddr_in serv_addr;
 int socket_fd;
-int command_fd;
-int report_fd;
+int socket_fd;
+int socket_fd;
 SSL* ssl_client = 0;
 SSL_CTX* ssl_context;
+
 // Globals for sensor
 mraa_aio_context temp_sensor;
 
@@ -108,6 +109,7 @@ void process_args(int argc, char **argv){
         port = atoi(argv[optind]);
         if (port <= 0){
             fprintf(stderr, "Error: invalid port\n");
+            exit(1);
         }
     }
     else{
@@ -125,7 +127,7 @@ void open_tcp_connection(){
     setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
     server = gethostbyname(host);
     if (server == NULL){
-        //fprintf(stderr, "Error: cannt find address for host asdfasdf", host);
+        fprintf(stderr, "Error: gethostbyname() failed for '%s'\n", host);
         exit(1);
     }
     bzero((char*) &serv_addr, sizeof(serv_addr));
@@ -137,16 +139,47 @@ void open_tcp_connection(){
     int ret = connect(socket_fd, (struct sockaddr*) &serv_addr, sizeof(serv_addr));
     if (ret < 0){
         fprintf(stderr, "Error: tcp connect() failed\n");
+        exit(2);
     }
-    command_fd = socket_fd;
-    report_fd = socket_fd;
+}
+
+void open_ssl_connection(){
+    if (SSL_library_init() < 0){
+        fprintf(stderr, "Error: SSL_library_init() failed\n");
+        exit(2);
+    }
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+    ssl_context = SSL_CTX_new(TLSv1_client_method());
+    if (ssl_context == NULL){
+        fprintf(stderr, "Error: ssl_context failed\n");
+        exit(2);
+    }
+    ssl_client = SSL_new(ssl_context);
+    if (ssl_client == NULL){
+        fprintf(stderr, "Error: SSL_new() failed\n");
+        exit(2);
+    }
+    if (!SSL_set_fd(ssl_client, socket_fd)){
+        fprintf(stderr, "Error: SSL_set_fd() failed\n");
+        exit(2);
+    }
+    if (SSL_connect(ssl_client) != 1){
+        fprintf(stderr, "Error: SSL_connect() failed\n");
+        exit(2);
+    }
 }
 
 void send_id(){
     char msg[13];
     sprintf(msg, "ID=%s\n", student_id);
+
     if (SSL_write(ssl_client, msg, 13) < 0){
         fprintf(stderr, "Error: SSL_write() failed\n");
+        exit(2);
+    }
+    if (log_fd != -1 && write(log_fd, msg, strlen(msg)) < 0){
+        fprintf(stderr, "Error: write() failed\n");
         exit(2);
     }
 }
@@ -171,11 +204,16 @@ void write_report(char* out){
 
     char buffer[256] = {0};
     sprintf(buffer, "%02d:%02d:%02d %s\n", now->tm_hour, now->tm_min, now->tm_sec, out);
+    
     write(1, buffer, strlen(buffer));
-    SSL_write(ssl_client, buffer, strlen(buffer));
-
-    if (log_fd != -1)
-        write(log_fd, buffer, strlen(buffer));
+    if (SSL_write(ssl_client, buffer, strlen(buffer)) < 0){
+        fprintf(stderr, "Error: SSL_write() failed\n");
+        exit(2);
+    }
+    if (log_fd != -1 && write(log_fd, buffer, strlen(buffer)) < 0){
+        fprintf(stderr, "Error: write() failed\n");
+        exit(2);
+    }
 }
 
 void sample(){
@@ -206,7 +244,6 @@ void sample(){
         }
         else if (fds[0].revents & POLLIN){
             char buffer[1024] = {0};
-            //read(fds[0].fd, buffer, 1024);
             SSL_read(ssl_client, buffer, 1024);
             char *token = strtok(buffer, "\n");
 
@@ -271,71 +308,29 @@ void sample(){
 // Exit handler
 void atexit_handler(){
     mraa_aio_close(temp_sensor);
-    close(log_fd);
+    if (log_fd > 0)
+        close(log_fd);
     SSL_shutdown(ssl_client);
     SSL_free(ssl_client);
-    close(command_fd);
+    close(socket_fd);
 }
 
 int main(int argc, char **argv){
     // Process command line args
     process_args(argc, argv);
 
-    fprintf(stderr, "period=%d\n", period);
-    fprintf(stderr, "scale=%c\n", scale);
-    fprintf(stderr, "log_fd=%d\n", log_fd);
-    fprintf(stderr, "id=%s\n", student_id);
-    fprintf(stderr, "host=%s\n", host);
-    fprintf(stderr, "port=%d\n", port);
-
-    // Open TCP       
+    // Open TCP then SSL
     open_tcp_connection();
+    open_ssl_connection();
 
-    fprintf(stderr, "1\n");
-
-    if (SSL_library_init() < 0){
-        fprintf(stderr, "Error: SSL_library_init() failed\n");
-        exit(2);
-    }
-    fprintf(stderr, "2\n");
-    SSL_load_error_strings();
-    fprintf(stderr, "3\n");
-    OpenSSL_add_all_algorithms();
-    fprintf(stderr, "4\n");
-    ssl_context = SSL_CTX_new(TLSv1_client_method());
-    fprintf(stderr, "5\n");
-    if (ssl_context == NULL){
-        fprintf(stderr, "Error: ssl_context failed\n");
-        exit(2);
-    }
-    fprintf(stderr, "6\n");
-    ssl_client = SSL_new(ssl_context);
-    fprintf(stderr, "7\n");
-    if (ssl_client == NULL){
-        fprintf(stderr, "Error: SSL_new() failed\n");
-        exit(2);
-    }
-    fprintf(stderr, "8\n");
-    if (!SSL_set_fd(ssl_client, command_fd)){
-        fprintf(stderr, "Error: SSL_set_fd() failed\n");
-        exit(2);
-    }
-    fprintf(stderr, "9\n");
-    if (SSL_connect(ssl_client) != 1){
-        fprintf(stderr, "Error: SSL_connect() failed\n");
-        exit(2);
-    }
-    fprintf(stderr, "10\n");
-
-    send_id();
-    fprintf(stderr, "11\n");
     // Setup the shutdown_flag sequence
     atexit(atexit_handler);
 
-    // Initialize sensors
+    // Send ID to authenticate
+    send_id();
+
+    // Initialize sensors and begin sampling
     temp_sensor = mraa_aio_init(1);
-    
-    // Begin sample loop
     sample();
 
     exit(0);
