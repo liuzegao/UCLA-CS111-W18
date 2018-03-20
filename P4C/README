@@ -1,0 +1,16 @@
+NAME: Quentin Truong
+EMAIL: quentintruong@gmail.com
+ID: 404782322
+---
+Descriptions of each of the included files
+- lab4c_tcp, lab4c_tls
+    C source files for two embedded applications (lab4c_tcp and lab4c_tls) that build and run (with no errors or warnings) on a Beaglebone.
+- Makefile to build and test your application
+    default ... build both versions of your program (compiling with the -Wall and -Wextra options).
+    clean ... delete all programs and output created by the Makefile and restore the directory to its freshly untarred state.
+    dist ... create the deliverable tarball.
+    Note that this Makefile is intended to be executed on a Beaglebone, but you may find it convenient to create a Makefile that can be run on either a Beaglebone or a Linux server/desktop/notebook.
+- README file containing:
+    descriptions of each of the included files.
+    any other comments on your submission that you would like to bring to our attention (e.g., research, limitations, features, testing methodology).
+---
