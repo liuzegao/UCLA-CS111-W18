@@ -5,10 +5,10 @@ Project | Score
 0  | 100
 1A | 100 
 1B | 100 
-2A | N/A
-2B | N/A 
+2A | 98
+2B | 100
 4A | 100
-4B | N/A
+4B | 70->95 MISGRADED
 3A | 93 
-3B | N/A
-4C | N/A
+3B | 100
+4C | 94
